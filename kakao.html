@@ -648,8 +648,10 @@ function chooseRes(i){SEL=RES[i];map.setView([+SEL.y,+SEL.x],17);
  sugList.innerHTML='<div class="sug" style="border:0">📍 <b>'+SEL.place_name+'</b><small>'+(SEL.road_address_name||SEL.address_name||'')+'</small></div>'
  +'<div class="src" style="margin:6px 0 4px">어떤 곳이에요?</div><div class="chips">'
  +['🏠 집','🏫 학교','📚 학원','👵 할머니집','⭐ 자주 가요'].map(l=>'<span class="chip ok" onclick="savePlace(\''+l+'\')" style="padding:8px 13px;font-size:13px">'+l+'</span>').join('')
- +'<span class="chip" onclick="goPlaceTemp()" style="padding:8px 13px;font-size:13px">저장 없이 바로 가기</span></div>';}
+ +'<span class="chip" onclick="customLabel()" style="padding:8px 13px;font-size:13px">✏️ 직접 입력</span><span class="chip" onclick="goPlaceTemp()" style="padding:8px 13px;font-size:13px">저장 없이 바로 가기</span></div>';}
 function savePlace(label){if(!SEL)return;const ps=loadPlaces();ps.push({label:label,name:SEL.place_name,lat:+SEL.y,lng:+SEL.x});localStorage.setItem(PLACES_KEY,JSON.stringify(ps));toast(label+' 저장!');document.getElementById('inTo').value='';renderPlaces();closeSearch();show('sh-home');}
+function customLabel(){if(document.getElementById('clRow'))return;sugList.insertAdjacentHTML('beforeend','<div class="inp" id="clRow" style="margin-top:8px"><span>✏️</span><input id="clName" placeholder="이름 붙이기 (예: 피아노, 이모네)" maxlength="10" style="border:0;background:transparent;outline:none;font-weight:700;font-size:14px;flex:1"><span class="chip ok" onclick="saveCustom()" style="cursor:pointer">저장</span></div>');document.getElementById('clName').focus();}
+function saveCustom(){const v=(document.getElementById('clName').value||'').trim();if(!v)return;savePlace('📌 '+v);}
 function goPlaceTemp(){if(!SEL)return;map.setView([+SEL.y,+SEL.x],17);closeSearch();show('sh-home');toast('📍 '+SEL.place_name);}
 function delPlace(i){const ps=loadPlaces();ps.splice(i,1);localStorage.setItem(PLACES_KEY,JSON.stringify(ps));renderPlaces();}
 function goPlace(i){const p=loadPlaces()[i];if(!p)return;
