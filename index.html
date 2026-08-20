@@ -199,6 +199,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <h2 id="rTitle">오늘 이 길, 조심할 곳 <span id="rWarnN">3</span>곳</h2>
   <div class="sub" id="rSub"></div>
   <div class="statrow" id="rStats"></div>
+  <div class="gap hide" id="rTrade"></div>
   <div id="rSteps"></div>
   <div class="row2"><button class="btn s" style="flex:0 0 76px" onclick="toast('길을 저장했어요');">🔖<br><span style="font-size:11px">저장</span></button><button class="btn s" style="flex:0 0 76px" onclick="shareGuardian()">👪<br><span style="font-size:11px">공유</span></button><button class="btn p" onclick="startWalk(false)">🚶 따라가기</button></div>
   <button class="btn s" onclick="backHome()">뒤로</button>
@@ -637,6 +638,11 @@ function drawRoute(){
   rEye.textContent='길 미리보기 · '+R.name;rWarnN.textContent=warn;
   rSub.textContent='도보 '+Math.round(total/(speed*60*0.9))+'분 · '+total+'m · 건널목 '+cwN+'곳 · '+WALKNM[speed]+(night?' · 🌙 안심길':'')+(wheel?' · ♿':'');
   rStats.innerHTML='<div class="stat"><b>'+cwN+'</b><span>건널목</span></div><div class="stat '+(noS?'bad':'ok')+'"><b>'+noS+'</b><span>신호 없음</span></div><div class="stat '+(sh?'warn':'ok')+'"><b>'+sh+'</b><span>짧은 신호</span></div><div class="stat '+(bad?'bad':'ok')+'"><b>'+warn+'</b><span>조심할 곳</span></div>';
+  let altM=0,altN=0;R.segs.forEach(s=>{if(s.alt&&!useAlt[s.id]){const e2=segEval(s);if(e2.level!=='ok'){altM+=s.alt.m-s.m;altN++;}}});
+  const rT=document.getElementById('rTrade');
+  if(altN>0){const tmin=Math.max(1,Math.round(altM/(speed*60*0.9)));rT.textContent='💡 '+tmin+'분만 더 걸으면 조심할 곳 '+altN+'곳을 피할 수 있어요';rT.classList.remove('hide');}
+  else if(Object.keys(useAlt).length){rT.textContent='✅ 우회를 적용했어요 — 마음 편한 길이에요';rT.classList.remove('hide');}
+  else rT.classList.add('hide');
   rSteps.innerHTML=steps.map(({i,ev,m,s})=>{const col=ev.level==='bad'?'var(--red)':(ev.level==='warn'?'var(--amber)':'var(--green)');const t=ev.level==='ok'?((useAlt[s.id]&&s.alt)?'✅ 우회 적용 · '+s.alt.why:(ev.cw?(ev.cw.rd+' 건널목 · '+ev.cw.lanes+'차로 · 초록 '+ev.cw.g+'초'):'큰길 · 괜찮아요')):ev.tags.join(' · ');const d=ev.level==='ok'?(ev.cw?('한 번에 건널 수 있어요'+(ev.cw.snd==="Y"?' · 🔊 음향신호기':'')):m+'m'):ev.msgs[0];return '<div class="step" onclick="openWarn('+i+')"><div class="ic" style="background:'+col+'">'+(i+1)+'</div><div><div class="t">'+t+'</div><div class="d">'+d+'</div></div>'+(ev.level!=='ok'&&s.alt?'<div class="act">이 구간만 우회 ›</div>':'')+'</div>';}).join('');
   render();
 }
