@@ -635,7 +635,7 @@ const PLACES_KEY='mj_places';
 const loadPlaces=()=>{try{return JSON.parse(localStorage.getItem(PLACES_KEY)||'[]')}catch(e){return[]}};
 const KP=new kakao.maps.services.Places();
 let searchT=null,RES=[],SEL=null,placeMarkers=[];
-function openSearch(){if(routeMode)return;document.getElementById('sugPanel').classList.remove('hide');document.getElementById('qClear').style.display='';searchSuggest(document.getElementById('inTo').value||'');}
+function openSearch(f){if(routeMode)return;if(f)setTimeout(()=>document.getElementById('inTo').focus(),80);document.getElementById('sugPanel').classList.remove('hide');document.getElementById('qClear').style.display='';searchSuggest(document.getElementById('inTo').value||'');}
 function closeSearch(){document.getElementById('sugPanel').classList.add('hide');document.getElementById('qClear').style.display='none';document.getElementById('inTo').value='';document.getElementById('inTo').blur();}
 function searchSuggest(q){clearTimeout(searchT);if(!q||q.length<2){sugList.innerHTML='<div class="src" style="margin-top:8px">두 글자 이상 입력하면 검색돼요</div>';return;}
  searchT=setTimeout(()=>{KP.keywordSearch(q,(data,status)=>{if(status!==kakao.maps.services.Status.OK){sugList.innerHTML='<div class="src" style="margin-top:8px">검색 결과가 없어요</div>';return;}
@@ -655,7 +655,7 @@ function goPlace(i){const p=loadPlaces()[i];if(!p)return;
 function renderPlaces(){const ps=loadPlaces();
  placeMarkers.forEach(m=>m.remove());placeMarkers=ps.map(p=>L.marker([p.lat,p.lng],ico('<div class="mk home"><div class="bub">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</div><div class="tail"></div></div>',850)).addTo(map));
  const w=document.getElementById('favWrap');
- if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch();document.getElementById('inTo').focus()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div>';}
+ if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch(1)"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div>';}
  else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
  const st=document.querySelector('#sh-home .statrow');if(st)st.style.display=ps.length?'':'none';const sr=document.querySelector('#sh-home > .src');if(sr)sr.style.display=ps.length?'':'none';const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
 ['segSig','segLight'].forEach(id=>{const el=document.getElementById(id);el.querySelectorAll('div').forEach(d=>d.onclick=()=>{el.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');if(id==='segSig'){fSig.textContent='🚦 '+d.textContent.trim()+' ▾';fSig.classList.toggle('on',d.textContent.trim()!=='상관없어요');}});});
