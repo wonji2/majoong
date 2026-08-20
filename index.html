@@ -276,7 +276,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="statrow"><div class="stat"><b id="bWalk"></b><span>정류장까지 내 걸음</span></div><div class="stat ok"><b id="bA1"></b><span>이번 버스</span></div><div class="stat"><b id="bA2"></b><span>다음 버스</span></div></div>
   <div class="chips" id="bChips"></div>
   <button class="btn s" onclick="show('sh-home')">닫기</button>
-  <div class="src">지금은 도착 시간이 예시예요. 실시간 연동(서울시 버스도착정보) 후에는 실제 값으로 계산돼요. 내 걸음 시간은 거리×걸음 설정 — 이건 지금도 진짜예요.</div>
+  <div class="src">도착 시간은 예시 · 실시간 연동 후 실제 값 · 거리와 내 걸음 시간은 실데이터</div>
  </div>
 
  <div class="sheet hide" id="sh-card">
@@ -496,14 +496,11 @@ const POI={bus:BUS.map(b=>[b[0],b[1],'🚌 '+b[2]]),hosp:HOSP.map(h=>[h[0],h[1],
 const poiLayers={};Object.keys(POI).forEach(k=>{poiLayers[k]=L.layerGroup(POI[k].map(p=>L.marker([p[0],p[1]],ico('<div class="mk poi"><div class="bub">'+p[2]+'</div><div class="tail"></div></div>',50)).on('click',()=>{if(k==='hosp'||k==='pharm'){toast('[여기까지 안전하게] → 현재 걷기 설정으로 길 찾기');}if(k==='bus'){openBus(p);}})));});
 function openBus(p){const me=map.k?map.k.getCenter():null;const from=me?{lat:me.getLat(),lng:me.getLng()}:SCHOOL;const d=dist(from,{lat:p[0],lng:p[1]});const walk=Math.max(1,Math.ceil(d/(speed*60)));const seed=Math.floor(p[0]*1e4+p[1]*1e4)%7;const a1=seed+3,a2=a1+9;
  bEye.textContent=p[2].replace(/<[^>]*>/g,'');bTitle.textContent='';bSub.textContent=Math.round(d)+'m · 배차 7~12분';bWalk.textContent=walk+'분';bA1.textContent=a1+'분';bA2.textContent=a2+'분';
- let msg,cls,chip;
- if(walk+1<=a1){const spare=a1-walk-1;
-  if(spare>=3){msg='여유 있어요 · '+spare+'분 뒤에 나서요';cls='ok';chip='천천히 걸어도 넉넉해요';}
-  else{msg='조금 빠듯해요 · 다음 버스가 편해요';cls='mid';chip='뛰지 않아도 돼요 · '+Math.max(0,a2-walk-1)+'분 뒤에 나서요';}}
- else if(walk+1<=a2){msg='이번 버스는 보내요 · 다음 버스에 맞춰요';cls='mid';chip=Math.max(0,a2-walk-1)+'분 뒤에 나서면 알맞아요';}
- else{msg='조금 뒤에 다시 확인해요';cls='ok';chip='도착 시간이 바뀌면 알려드려요';}
- bTitle.textContent=msg;bChips.innerHTML='<span class="chip no">⚠ 예시 화면 — 아직 실시간이 아니에요</span><span class="chip '+cls+'">'+chip+'</span><span class="chip">내 걸음 '+(WALKNM[speed]||'보통')+'</span>';
- bSub.textContent=Math.round(d)+'m · 연동 후엔 타실 노선을 고르면, 그 노선의 실제 도착시간과 내 걸음으로 계산해 알려드려요';
+ let msg,cls;
+ if(walk+1<=a1){const spare=a1-walk-1;if(spare>=3){msg='여유 있어요';cls='ok';}else{msg='촉박해요';cls='mid';}}
+ else{msg='다음 버스를 기다려요';cls='mid';}
+ bTitle.textContent=msg;bChips.innerHTML='<span class="chip no">⚠ 예시</span><span class="chip">내 걸음 '+(WALKNM[speed]||'보통')+'</span>';
+ bSub.textContent=Math.round(d)+'m';
  show('sh-bus');}
 function renderPOI(){Object.keys(POI).forEach(k=>{if(poiOn[k]&&!hidden)poiLayers[k].addTo(map);else poiLayers[k].remove();});}
 document.querySelectorAll('.pchip').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();});
