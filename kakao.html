@@ -628,7 +628,7 @@ function backHome(){stopLive();routeMode=false;layersOnMap.forEach(l=>l.remove()
 function fitRoute(){if(!cur)return;layersOnMap.forEach(pl=>pl.setStyle({opacity:.95,weight:7}));const R=ROUTES[cur];map.fitBounds(L.latLngBounds([[SCHOOL.lat,SCHOOL.lng],[R.dest.lat,R.dest.lng]]).pad(.35));}
 let shared=false;function shareGuardian(){shared=true;toast("👪 보호자에게 공유했어요");say('보호자에게 길을 공유했어요.');}
 let fi=0;
-function startWalk(share){fi=0;const eta=clock.textContent.replace(/(\d+):(\d+)/,(m,h,mm)=>String(+h).padStart(2,'0')+':'+String((+mm+9)%60).padStart(2,'0'));if(shared){toast('🏫 출발 · 도착 예정 '+eta+' → 보호자에게 알림 전송');say('출발! 보호자에게 알려드렸어요.');}else{toast('길 안내 시작 · 도착 예정 '+eta);say('길 안내를 시작할게요.');}renderFollow();show('sh-follow');}
+function startWalk(share){fi=0;const dd=new Date(Date.now()+9*60000);const eta=String(dd.getHours()).padStart(2,"0")+":"+String(dd.getMinutes()).padStart(2,"0");if(shared){toast('🏫 출발 · 도착 예정 '+eta+' → 보호자에게 알림 전송');say('출발! 보호자에게 알려드렸어요.');}else{toast('길 안내 시작 · 도착 예정 '+eta);say('길 안내를 시작할게요.');}renderFollow();show('sh-follow');}
 function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=segEval(s);fEye.textContent='구간 '+(fi+1)+'/'+segs.length+' · '+((useAlt[s.id]&&s.alt)?s.alt.m:s.m)+'m 앞';
   fTitle.textContent=ev.cw?(ev.cw.rd+' 건널목 · '+ev.cw.lanes+'차로'):(ev.level==='ok'?'큰길 · 괜찮아요':ev.tags[0]);fSub.textContent=ev.msgs[0]||(ev.cw?('초록 '+ev.cw.g+'초 · 내 걸음 '+need(ev.cw)+'초 · 한 번에 건너요'):'그대로 가요');
   fChips.innerHTML=(ev.cw&&ev.cw.sig==="Y"?'<span class="chip '+(short(ev.cw)?'mid':'ok')+'">'+(short(ev.cw)?'켜지자마자 출발':'한 번에 건너요')+'</span>':'')+(ev.cw&&ev.cw.snd==="Y"?'<span class="chip ok">🔊 음향신호기</span>':'')+(ev.cw&&ev.cw.sig==="Y"?'<span class="live"><span class="pd"></span>빨간불 · 12초 남음</span>':'');
