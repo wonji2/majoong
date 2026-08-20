@@ -250,10 +250,10 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="seg" id="segSpeed"><div data-v="1.0">뛸 수 있어요</div><div data-v="0.8" class="on">보통</div><div data-v="0.7">천천히 걸어요</div></div>
   <div class="src">내 걸음에 맞춰 초록불 시간을 계산해요.</div>
   <h4>🚦 건널목</h4>
-  <div class="seg"><div class="on">신호등만</div><div>균형</div><div>상관없어요</div></div>
+  <div class="seg" id="segSig"><div class="on">신호등만</div><div>균형</div><div>상관없어요</div></div>
   
   <h4>💡 밝기</h4>
-  <div class="seg"><div>밝은 길</div><div class="on">균형</div><div>상관없어요</div></div>
+  <div class="seg" id="segLight"><div>밝은 길</div><div class="on">균형</div><div>상관없어요</div></div>
   <div class="src">해가 지면 자동으로 "밝은 길"이 돼요.</div>
   <div class="tg">🔊 음향·점자 있는 건널목 우선<div class="sw" onclick="this.classList.toggle('on')"></div></div>
   <div class="tg">♿ 휠체어·유모차 (턱·경사)<div class="sw" id="swWheel" onclick="this.classList.toggle('on');toggleWheel()"></div></div>
@@ -662,6 +662,7 @@ function renderPlaces(){const ps=loadPlaces();
  if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div>';}
  else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
  const st=document.querySelector('#sh-home .statrow');if(st)st.style.display=ps.length?'':'none';const sr=document.querySelector('#sh-home > .src');if(sr)sr.style.display=ps.length?'':'none';const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
+['segSig','segLight'].forEach(id=>{const el=document.getElementById(id);el.querySelectorAll('div').forEach(d=>d.onclick=()=>{el.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');if(id==='segSig'){fSig.textContent='🚦 '+d.textContent.trim()+' ▾';fSig.classList.toggle('on',d.textContent.trim()!=='상관없어요');}});});
 renderPlaces();
 show(loadPlaces().length?'sh-home':'sh-search');
 </script>
