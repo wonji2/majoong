@@ -496,7 +496,7 @@ const POI={bus:BUS.map(b=>[b[0],b[1],'🚌 '+b[2],'seoul',b[3]]),hosp:HOSP.map(h
 const poiLayers={};Object.keys(POI).forEach(k=>{poiLayers[k]=L.layerGroup(POI[k].map(p=>L.marker([p[0],p[1]],ico('<div class="mk poi"><div class="bub">'+p[2]+'</div><div class="tail"></div></div>',50)).on('click',()=>{if(k==='hosp'||k==='pharm'){toast('[여기까지 안전하게] → 현재 걷기 설정으로 길 찾기');}if(k==='bus'){openBus(p);}})));});
 const PROXY='https://hycaqsqeogjtbscmzrtm.supabase.co/functions/v1/bus-arrival';
 async function openBus(p){const me=map.k?map.k.getCenter():null;const from=me?{lat:me.getLat(),lng:me.getLng()}:SCHOOL;const d=dist(from,{lat:p[0],lng:p[1]});const walk=Math.max(1,Math.ceil(d/(speed*60)));
- bEye.textContent=p[2].replace(/<[^>]*>/g,'');bTitle.textContent='불러오는 중…';bSub.textContent=Math.round(d)+'m';bWalk.textContent=walk+'분';bA1.textContent='–';bA2.textContent='–';bChips.innerHTML='';show('sh-bus');
+ bEye.textContent=p[2].replace(/<[^>]*>/g,'');bTitle.textContent='불러오는 중…';bSub.textContent=Math.round(d)+'m';bWalk.textContent=walk+'분';bA1.textContent='–';bA2.textContent='–';bChips.innerHTML='';document.querySelectorAll('#busList').forEach(x=>x.remove());show('sh-bus');
  try{const q=p[3]==='gg'?('?mode=gg&stationId='+p[4]):('?mode=seoul&arsId='+p[4]);const j=await fetch(PROXY+q).then(r=>r.json());
  const rows=[];(j.items||[]).forEach(it=>{let m1=null;if(it.t1!==undefined&&it.t1!==''){m1=+it.t1;}else if(it.msg1){const mm=/([0-9]+)분/.exec(it.msg1);m1=mm?+mm[1]:(/곧 도착/.test(it.msg1)?0:null);}if(m1===null||isNaN(m1))return;let m2=null;if(it.t2!==undefined&&it.t2!==''){m2=+it.t2;}else if(it.msg2){const mm2=/([0-9]+)분/.exec(it.msg2);m2=mm2?+mm2[1]:null;}rows.push({rt:it.rt,dir:it.dir||'',m1:m1,m2:m2});});
  rows.sort((a,b)=>a.m1-b.m1);
@@ -506,7 +506,7 @@ async function openBus(p){const me=map.k?map.k.getCenter():null;const from=me?{l
  bTitle.textContent=msg;
  bChips.innerHTML='<span class="chip '+cls+'">'+best.rt+'번 · '+best.m1+'분 후</span><span class="chip">내 걸음 '+walk+'분</span>';
  const list=rows.slice(0,4).map(r=>'<div class="step"><div class="ic" style="background:var(--green)">🚌</div><div><div class="t">'+r.rt+'번 · '+r.m1+'분 후'+(r.m2!==null?' · 다음 '+r.m2+'분':'')+'</div><div class="d">'+r.dir+' 방면</div></div></div>').join('');
- bChips.insertAdjacentHTML('afterend','<div id="busList">'+list+'</div>');const old=document.querySelectorAll('#busList');if(old.length>1)old[0].remove();
+ document.querySelectorAll('#busList').forEach(x=>x.remove());bChips.insertAdjacentHTML('afterend','<div id="busList">'+list+'</div>');
  }catch(e){bTitle.textContent='연결이 잠시 안 돼요';bChips.innerHTML='<span class="chip">'+String(e).slice(0,40)+'</span>';}}
 
 function renderPOI(){Object.keys(POI).forEach(k=>{if(poiOn[k]&&!hidden)poiLayers[k].addTo(map);else poiLayers[k].remove();});}
