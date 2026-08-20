@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>마중길 — 액션 목업 v7 (온보딩 · 깨끗한 지도 · 분석 동작)</title>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=860978723be1a27dd6613aa69395b2ad"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--brand:#FF5C8A;--soft:#FFF0F5;--ink:#1F1F23;--sub:#6e6e73;--sub2:#8f959e;--bg:#f5f5f7;--card:#fff;--green:#00B75C;--red:#ED2831;--amber:#FF9500;--grey:#B0B4BC;--pill:999px;}
 *{margin:0;padding:0;box-sizing:border-box;font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-tap-highlight-color:transparent;}
@@ -464,55 +465,6 @@ function dist(a,b){const dx=(b.lng-a.lng)*88500*Math.cos(a.lat*Math.PI/180),dy=(
 function elevAt(lat,lng){let best=null,bd=1e9;ELEV.forEach(e=>{const d=dist({lat:e[0],lng:e[1]},{lat,lng});if(d<bd){bd=d;best=e[2]}});return best;}
 function say(t){if(!voiceOn||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u);}
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600);}
-
-/* ── Leaflet 호환 어댑터 → 카카오맵 (목업용 최소 구현) ── */
-const KZOOM=z=>Math.max(1,Math.min(14,20-z));
-const KLL=p=>new kakao.maps.LatLng(p[0]!==undefined?p[0]:p.lat, p[1]!==undefined?p[1]:p.lng);
-const L={
- map:(id,opts)=>{
-  const k=new kakao.maps.Map(document.getElementById(id),{center:new kakao.maps.LatLng(37.5008,126.9262),level:3});
-  return {
-   k,
-   setView(c,z){k.setCenter(KLL(c));if(z)k.setLevel(KZOOM(z));return this;},
-   getZoom(){return 20-k.getLevel();},
-   setZoom(z){k.setLevel(KZOOM(z));},
-   panTo(c){k.panTo(KLL(c));},
-   fitBounds(b){const bb=new kakao.maps.LatLngBounds();(b.pts||[]).forEach(p=>bb.extend(KLL(p)));k.setBounds(bb);},
-   on(ev,fn){kakao.maps.event.addListener(k,ev==='zoomend'?'zoom_changed':ev,fn);}
-  };
- },
- tileLayer:()=>({addTo:()=>({})}),
- layerGroup:ms=>({addTo(m){ms.forEach(x=>x.addTo(m));return this;},remove(){ms.forEach(x=>x.remove());return this;}}),
- latLngBounds:pts=>({pts:pts.map(p=>[p[0],p[1]]),pad(){return this;}}),
- divIcon:o=>({html:o.html||''}),
- marker:(pos,opts)=>{
-  const el=document.createElement('div');el.style.cursor='pointer';el.innerHTML=(opts&&opts.icon&&opts.icon.html)||'';
-  const ov=new kakao.maps.CustomOverlay({position:KLL(pos),content:el,yAnchor:1,xAnchor:.5,zIndex:(opts&&opts.zIndexOffset)||0,clickable:true});
-  return {
-   _el:el,_ov:ov,
-   addTo(m){ov.setMap(m.k||map.k);return this;},
-   remove(){ov.setMap(null);return this;},
-   setIcon(ic){el.innerHTML=ic.html||'';return this;},
-   setZIndexOffset(z){ov.setZIndex(z);return this;},
-   on(ev,fn){el.addEventListener(ev,e=>{e.stopPropagation();fn(e);});return this;}
-  };
- },
- circle:(pos,o)=>{
-  const c=new kakao.maps.Circle({center:KLL(pos),radius:o.radius,strokeColor:o.color,strokeWeight:o.weight||2,strokeStyle:o.dashArray?'shortdash':'solid',strokeOpacity:.9,fillColor:o.fillColor||o.color,fillOpacity:o.fillOpacity||0});
-  return {addTo(m){c.setMap(m.k||map.k);return this;},bindTooltip(){return this;},remove(){c.setMap(null);}};
- },
- polyline:(pts,o)=>{
-  const pl=new kakao.maps.Polyline({path:pts.map(KLL),strokeColor:o.color,strokeWeight:o.weight||6,strokeOpacity:o.opacity||.9,strokeStyle:'solid'});
-  return {
-   _pl:pl,
-   addTo(m){pl.setMap(m.k||map.k);return this;},
-   remove(){pl.setMap(null);},
-   setStyle(s){pl.setOptions({strokeOpacity:s.opacity!==undefined?s.opacity:.95,strokeWeight:s.weight||7});},
-   on(ev,fn){kakao.maps.event.addListener(pl,ev,fn);return this;},
-   getBounds(){return {pts:pts.map(p=>[p[0],p[1]]),pad(){return this;}};}
-  };
- }
-};
 
 const map=L.map('map',{zoomControl:false}).setView([37.5008,126.9262],17);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CARTO · 공공데이터포털 표준데이터·경찰청·행안부·심평원·서울시',maxZoom:19}).addTo(map);
