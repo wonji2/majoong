@@ -654,7 +654,7 @@ function searchSuggest(q){clearTimeout(searchT);if(!q||q.length<2){sugList.inner
 function chooseRes(i){SEL=RES[i];map.setView([+SEL.y,+SEL.x],17);
  sugList.innerHTML='<div class="sug" style="border:0">📍 <b>'+SEL.place_name+'</b><small>'+(SEL.road_address_name||SEL.address_name||'')+'</small></div>'
  +'<div class="src" style="margin:6px 0 4px">어떤 곳이에요?</div><div class="chips">'
- +['🏠 집','🏫 학교','📚 학원','👵 할머니집','⭐ 자주 가요'].map(l=>'<span class="chip ok" onclick="savePlace(''+l+'')" style="padding:8px 13px;font-size:13px">'+l+'</span>').join('')
+ +['🏠 집','🏫 학교','📚 학원','👵 할머니집','⭐ 자주 가요'].map(l=>'<span class="chip ok" onclick="savePlace(\''+l+'\')" style="padding:8px 13px;font-size:13px">'+l+'</span>').join('')
  +'<span class="chip" onclick="goPlaceTemp()" style="padding:8px 13px;font-size:13px">저장 없이 바로 가기</span></div>';}
 function savePlace(label){if(!SEL)return;const ps=loadPlaces();ps.push({label:label,name:SEL.place_name,lat:+SEL.y,lng:+SEL.x});localStorage.setItem(PLACES_KEY,JSON.stringify(ps));toast(label+' 저장!');document.getElementById('inTo').value='';renderPlaces();show('sh-home');}
 function goPlaceTemp(){if(!SEL)return;map.setView([+SEL.y,+SEL.x],17);show('sh-home');toast('📍 '+SEL.place_name);}
@@ -666,9 +666,9 @@ function goPlace(i){const p=loadPlaces()[i];if(!p)return;
 function renderPlaces(){const ps=loadPlaces();
  placeMarkers.forEach(m=>m.remove());placeMarkers=ps.map(p=>L.marker([p.lat,p.lng],ico('<div class="mk home"><div class="bub">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</div><div class="tail"></div></div>',850)).addTo(map));
  const w=document.getElementById('favWrap');
- if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div><div class="favc" onclick="preview('home')"><b>🏫 대림초 → 🏠 집</b><span>둘러보기 (예시)</span></div>';}
+ if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div><div class="favc" onclick="preview(\'home\')"><b>🏫 대림초 → 🏠 집</b><span>둘러보기 (예시)</span></div>';}
  else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
- const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show('sh-home')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
+ const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
 renderPlaces();
 show(loadPlaces().length?'sh-home':'sh-search');
 </script>
