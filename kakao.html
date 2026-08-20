@@ -482,6 +482,7 @@ const L={
   };
  },
  tileLayer:()=>({addTo:()=>({})}),
+ layerGroup:ms=>({addTo(m){ms.forEach(x=>x.addTo(m));return this;},remove(){ms.forEach(x=>x.remove());return this;}}),
  latLngBounds:pts=>({pts:pts.map(p=>[p[0],p[1]]),pad(){return this;}}),
  divIcon:o=>({html:o.html||''}),
  marker:(pos,opts)=>{
