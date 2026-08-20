@@ -157,6 +157,8 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
    <div class="fchip pchip" data-p="hosp">🏥 병원</div>
    <div class="fchip pchip" data-p="pharm">💊 약국</div>
    <div class="fchip pchip" data-p="cctv">📹 CCTV</div>
+   <div class="fchip pchip" data-p="toilet">🚻 화장실</div>
+   <div class="fchip pchip" data-p="subway">🚇 지하철</div>
   </div>
  </div>
  <div class="rstack">
@@ -518,7 +520,17 @@ async function openBus(p){const me=map.k?map.k.getCenter():null;const from=me?{l
 function renderPOI(){Object.keys(POI).forEach(k=>{if(poiOn[k]&&!hidden)poiLayers[k].addTo(map);else poiLayers[k].remove();});}
 let ggMarkers=[];
 async function loadGgStops(){ggMarkers.forEach(m=>m.remove());ggMarkers=[];if(!poiOn.bus)return;const c=map.k.getCenter();try{const j=await fetch(PROXY+'?mode=around&x='+c.getLng()+'&y='+c.getLat()).then(r=>r.json());(j.items||[]).slice(0,15).forEach(s=>{const mk=L.marker([+s.y,+s.x],ico('<div class="mk poi"><div class="bub">🚌 '+s.name+'</div><div class="tail"></div></div>',50)).addTo(map);mk.on('click',()=>openBus([+s.y,+s.x,'🚌 '+s.name,'gg',s.id]));ggMarkers.push(mk);});}catch(e){}}
-document.querySelectorAll('.pchip').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();if(k==='bus')loadGgStops();});
+let toiletMarkers=[],subwayMarkers=[];
+async function loadToilets(){toiletMarkers.forEach(m=>m.remove());toiletMarkers=[];if(!poiOn.toilet)return;const txt=await fetch('data/toilet_geo.tsv').then(r=>r.text());const c=map.k.getCenter();txt.trim().split('
+').forEach(l=>{const[nm,la,lo,d]=l.split('	');if(dist({lat:+la,lng:+lo},{lat:c.getLat(),lng:c.getLng()})>1500)return;const mk=L.marker([+la,+lo],ico('<div class="mk poi"><div class="bub">🚻'+(+d?'♿':'')+' '+nm+'</div><div class="tail"></div></div>',40)).addTo(map);mk.on('click',()=>toast(nm+(+d?' · 장애인 화장실 있어요':'')));toiletMarkers.push(mk);});if(!toiletMarkers.length)toast('이 근처엔 표시할 화장실이 없어요 — 동작구에서 확인해보세요');}
+async function loadSubway(){subwayMarkers.forEach(m=>m.remove());subwayMarkers=[];if(!poiOn.subway)return;const P2=new kakao.maps.services.Places();const c=map.k.getCenter();P2.categorySearch('SW8',(d,s)=>{if(s!==kakao.maps.services.Status.OK)return;d.slice(0,6).forEach(st=>{const nm=st.place_name.split(' ')[0].replace(/역,'');const mk=L.marker([+st.y,+st.x],ico('<div class="mk poi"><div class="bub">🚇 '+st.place_name.split(' ')[0]+'</div><div class="tail"></div></div>',60)).addTo(map);mk.on('click',()=>openSubway(nm,st.place_name));subwayMarkers.push(mk);});},{location:new kakao.maps.LatLng(c.getLat(),c.getLng()),radius:3000});}
+async function openSubway(nm,full){bEye.textContent='🚇 '+full;bTitle.textContent='불러오는 중…';bSub.textContent='';bWalk.textContent='–';bA1.textContent='–';bA2.textContent='–';bChips.innerHTML='';document.querySelectorAll('#busList').forEach(x=>x.remove());show('sh-bus');
+ try{const j=await fetch(PROXY+'?mode=subway&station='+encodeURIComponent(nm)).then(r=>r.json());const items=(j.items||[]).slice(0,6);
+ if(!items.length){bTitle.textContent='지금은 도착 정보가 없어요';return;}
+ bTitle.textContent='실시간 도착';bChips.innerHTML='<span class="chip ok">서울시 실시간</span>';
+ bChips.insertAdjacentHTML('afterend','<div id="busList">'+items.map(x=>'<div class="step"><div class="ic" style="background:var(--green)">🚇</div><div><div class="t">'+x.line+'</div><div class="d">'+x.msg+(x.loc&&x.loc!==x.msg?' · '+x.loc:'')+'</div></div></div>').join('')+'</div>');
+ }catch(e){bTitle.textContent='연결이 잠시 안 돼요';}}
+document.querySelectorAll('.pchip').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();if(k==='bus')loadGgStops();if(k==='toilet')loadToilets();if(k==='subway')loadSubway();});
 
 /* crosswalk markers */
 function cls(c){
