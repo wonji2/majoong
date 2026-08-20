@@ -422,7 +422,7 @@ const HOME={lat:37.50290983,lng:126.9290000};
 const DOJANG={lat:37.49930467,lng:126.926335};
 const ACC=[{lat:37.500166,lng:126.925842,y:2024,t:"스쿨존어린이",n:2},{lat:37.500081,lng:126.920412,y:2024,t:"자전거",n:5}];
 const WALKNM={1:"뛸 수 있어요",0.8:"보통",0.7:"천천히 걸어요"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=false, layerOn=false;
-const poiOn={school:true};
+const poiOn={};
 const need=c=>Math.round(7+(c.lanes*3.25)/speed);
 const short=c=>c.sig==="Y"&&c.g>0&&c.g<need(c);
 const dark=c=>c.lit===0;
@@ -661,7 +661,7 @@ function goPlace(i){const p=loadPlaces()[i];if(!p)return;
 function renderPlaces(){const ps=loadPlaces();
  placeMarkers.forEach(m=>m.remove());placeMarkers=ps.map(p=>L.marker([p.lat,p.lng],ico('<div class="mk home"><div class="bub">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</div><div class="tail"></div></div>',850)).addTo(map));
  const w=document.getElementById('favWrap');
- if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div><div class="favc" onclick="preview(\'home\')"><b>🏫 대림초 → 🏠 집</b><span>둘러보기 (예시)</span></div>';}
+ if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div>';}
  else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
  const st=document.querySelector('#sh-home .statrow');if(st)st.style.display=ps.length?'':'none';const sr=document.querySelector('#sh-home > .src');if(sr)sr.style.display=ps.length?'':'none';const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
 renderPlaces();
