@@ -143,7 +143,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  <div class="splash" id="splash">
   <div class="logo">마중길</div>
   <h1>노량진로 이 횡단보도,<br>초록불 <em>26초</em>.<br>초1 걸음으로는 <em>36초</em>.</h1>
-  <p>어른은 이 10초를 평생 모릅니다.<br>신호등은 어른 걸음으로 설계됐고,<br>초등학교 1학년은 그 도시를 혼자 건넙니다.</p>
+  <p>어른은 이 10초를 평생 모릅니다.</p>
   <div class="big"><span class="n red">62<small style="font-size:16px">곳</small></span><small>동작구 신호등 중<br>아이 걸음으로 한 번에 못 건너는 곳</small></div>
     <button class="btn p" onclick="document.getElementById('splash').classList.add('hide');show('sh-onb');say('마중길은 이 10초를 계산하는 지도입니다.')">마중길은 이 10초를 계산하는 지도입니다 →</button>
   <div class="src" style="text-align:center">같은 엔진 · 다른 걸음속도(0.7 / 0.8 / 1.0) = 어르신·휠체어·유모차도 그대로</div>
@@ -186,7 +186,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  </div>
 
  <div class="legend" id="legend"></div>
- <div class="voice" id="voiceBtn" title="음성 안내">🔊</div>
+ <div class="voice" id="voiceBtn" title="음성 안내 (설정에서 켜기)">🔇</div>
  <div class="tbar"><span class="now" id="nowBtn">● 실시간</span><input type="range" id="tslider" min="8" max="20" step="0.5" value="14.5"><div class="clock"><span id="clock">14:30</span><small>하교 시간대</small></div></div>
 
  <!-- v7 온보딩: 그늘로처럼 첫 실행에 장소·걸음 저장 -->
@@ -293,7 +293,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="tg">⚠️ 사고다발 알려주기<div class="sw on" onclick="this.classList.toggle('on')"></div></div>
   <div class="tg">🚲 자전거·킥보드로 가요<div class="sw" onclick="this.classList.toggle('on')"></div></div>
   <div class="tg">🌙 안심길 (밤엔 큰길·CCTV)<div class="sw" id="swNight" onclick="this.classList.toggle('on');toggleNight()"></div></div>
-  <div class="tg">🔊 음성 안내 (무료 기본 음성)<div class="sw on" id="swVoice" onclick="this.classList.toggle('on')"></div></div>
+  <div class="tg">🔊 음성 안내<div class="sw" id="swVoice" onclick="this.classList.toggle('on')"></div></div>
   <button class="btn p" onclick="show('sh-home')">이 기기에 설정 저장</button>
   <div class="src" style="text-align:center">로그인 없이 이 기기에만 저장돼요</div>
  </div>
@@ -454,7 +454,7 @@ const SCHOOL={lat:37.50061292,lng:126.9248853};
 const HOME={lat:37.50290983,lng:126.9290000};
 const DOJANG={lat:37.49930467,lng:126.926335};
 const ACC=[{lat:37.500166,lng:126.925842,y:2024,t:"스쿨존어린이",n:2},{lat:37.500081,lng:126.920412,y:2024,t:"자전거",n:5}];
-const WALKNM={1:"뛸 수 있어요",0.8:"보통",0.7:"천천히 걸어요"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=true, layerOn=false;
+const WALKNM={1:"뛸 수 있어요",0.8:"보통",0.7:"천천히 걸어요"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=false, layerOn=false;
 const poiOn={school:true};
 const need=c=>Math.round(7+(c.lanes*3.25)/speed);
 const short=c=>c.sig==="Y"&&c.g>0&&c.g<need(c);
@@ -564,25 +564,25 @@ function render(){
   if(window.nCW){nCW.textContent=CW.length;nCC.textContent=CCTV.length;nBus.textContent=BUS.length;nH.textContent=HOSP.length;nP.textContent=PHARM.length;}
 }
 document.querySelectorAll('#layers .gi[data-l]').forEach(el=>el.onclick=()=>{document.querySelectorAll('#layers .gi').forEach(x=>x.classList.remove('on'));el.classList.add('on');layer=el.dataset.l;render();});
-tslider.oninput=e=>{hour=+e.target.value;const h=Math.floor(hour),m=hour%1?'30':'00';clock.textContent=String(h).padStart(2,'0')+':'+m;timechip.textContent=hour>=14&&hour<18?'하교 14~18시':(isNight()?'해 진 뒤 🌙':'낮');nowBtn.textContent=Math.abs(hour-14.5)<.01?'● 실시간':'시간 이동';if(isNight()&&!night){night=true;document.getElementById('swNight').classList.add('on');fNight.classList.add('on');toast('해가 졌어요 — 안심길(밝은 길·CCTV) 자동 켜짐');}if(routeMode)drawRoute();else render();};
+tslider.oninput=e=>{hour=+e.target.value;const h=Math.floor(hour),m=hour%1?'30':'00';clock.textContent=String(h).padStart(2,'0')+':'+m;timechip.textContent=hour>=14&&hour<18?'하교 14~18시':(isNight()?'해 진 뒤 🌙':'낮');nowBtn.textContent=Math.abs(hour-14.5)<.01?'● 실시간':'시간 이동';if(isNight()&&!night){night=true;document.getElementById('swNight').classList.add('on');fNight.classList.add('on');toast("해가 졌어요 — 안심길 자동 켜짐");}if(routeMode)drawRoute();else render();};
 
 const sheets=['sh-onb','sh-search','sh-home','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card'];
 function show(id){if(id!=='sh-warn')stopLive();sheets.forEach(s=>document.getElementById(s).classList.toggle('hide',s!==id));}
 document.querySelectorAll('.rbtn[data-r]').forEach(b=>b.onclick=()=>{const k=b.dataset.r;const p=document.getElementById('pop-'+k);const open=p.classList.contains('hide');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));if(open){p.classList.remove('hide');b.classList.add('on');}
-  if(k==='layer'){layerOn=open;if(layerOn&&map.getZoom()<17)map.setZoom(17);render();if(layerOn)toast('건널목 보기 켜짐 — 칩으로 항목을 바꿔요 (지도 확대 시 표시)');}});
+  if(k==='layer'){layerOn=open;if(layerOn&&map.getZoom()<17)map.setZoom(17);render();if(layerOn)toast("건널목 보기 켜짐");}});
 map.on('zoomend',()=>render());
 /* 분석 그리드: 전부 동작 */
 const ANA={
- '⏰ 시간대별 사고':()=>{toast('오후 2~6시 스쿨존 사상자 53% · 사망자 67% (도로교통공단) — 슬라이더를 14~18시로');tslider.value=15;tslider.oninput({target:tslider});},
- '🌙 어두운 건널목':()=>{layerOn=true;document.querySelector('[data-l=lit]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast('보안등 30m 없는 건널목 — 대림초 반경 300m에 4곳');},
- '🚲 자전거 사고':()=>{layerOn=true;document.querySelector('[data-l=acc]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast('자전거 사고다발(동작 61곳) 100m 안 건널목 표시');},
- '↪ 우회전 사각지대 (분당)':()=>toast('성남시 API: 분당 횡단보도 417 중 155곳(37%)이 우회전 사각지대 — 분당 단계에서 경고 유형으로'),
- '🟨 옐로카펫 대기위치':()=>toast('성남 옐로카펫 152곳(초등 38교 중 36교) · 동작 16곳 — "노란 카펫 위에서 기다려"'),
- '🚦 실시간 신호 (API 수신 중)':()=>{preview('home');openWarn(2);toast('행안부 실시간 신호 API 15157604 — 교차로 4,237 · 방향별 1,342 수신 확인');}
+ '⏰ 시간대별 사고':()=>{toast("하교 시간대로 이동했어요");tslider.value=15;tslider.oninput({target:tslider});},
+ '🌙 어두운 건널목':()=>{layerOn=true;document.querySelector('[data-l=lit]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast("어두운 건널목 표시");},
+ '🚲 자전거 사고':()=>{layerOn=true;document.querySelector('[data-l=acc]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast("자전거 사고 많은 곳 표시");},
+ '↪ 우회전 사각지대 (분당)':()=>toast("우회전 사각지대 — 분당에서 제공 예정"),
+ '🟨 옐로카펫 대기위치':()=>toast("옐로카펫 — 기다리는 자리 표시"),
+ '🚦 실시간 신호 (API 수신 중)':()=>{preview('home');openWarn(2);toast("실시간 신호 — 건널목 카드에서 확인");}
 };
 document.querySelectorAll('#pop-analysis .gi').forEach(g=>{const t=g.textContent.trim();if(ANA[t])g.onclick=()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));ANA[t]();};else if(g.classList.contains('off'))g.onclick=()=>toast('본선에서 구현 예정');});
 /* 하교 시간대 칩 */
-timechip.onclick=e=>{e.stopPropagation();const tb=document.querySelector('.tbar');tb.style.display=tb.style.display==='none'?'':'none';toast(tb.style.display==='none'?'시간 슬라이더 숨김':'시간 슬라이더: 하교 14~18시 = 스쿨존 사고 53%/67% 시간대 · 18:30 넘기면 안심길 자동');};
+timechip.onclick=e=>{e.stopPropagation();const tb=document.querySelector('.tbar');tb.style.display=tb.style.display==='none'?'':'none';toast(tb.style.display==="none"?"시간 숨김":"하교 시간대 미리보기");};
 hideBtn.onclick=()=>{hidden=!hidden;hideBtn.classList.toggle('on',hidden);render();renderPOI();};
 map.on('click',()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));});
 fWalk.onclick=fSig.onclick=()=>show('sh-pref');
@@ -591,7 +591,7 @@ fWheel.onclick=()=>{wheel=!wheel;document.getElementById('swWheel').classList.to
 function toggleNight(){night=document.getElementById('swNight').classList.contains('on');fNight.classList.toggle('on',night);if(routeMode)drawRoute();}
 function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');fWheel.classList.toggle('on',wheel);if(routeMode)drawRoute();}
 segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';render();if(routeMode)drawRoute();});
-voiceBtn.onclick=()=>{voiceOn=!voiceOn;voiceBtn.classList.toggle('on',voiceOn);document.getElementById('swVoice').classList.toggle('on',voiceOn);toast(voiceOn?'음성 안내 켜짐':'음성 안내 꺼짐');};
+voiceBtn.onclick=()=>{voiceOn=!voiceOn;voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);document.getElementById("swVoice").classList.toggle("on",voiceOn);toast(voiceOn?"음성 안내 켜짐":"음성 안내 꺼짐");};document.getElementById("swVoice").addEventListener("click",()=>{voiceOn=document.getElementById("swVoice").classList.contains("on");voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);});
 function openCard(i){if(routeMode)return;selected=i;render();const c=CW[i];cRoad.textContent=(c.rd||'도로명 없음')+' · '+c.lanes+'차로';cTitle.textContent=c.sig==="Y"?'신호등 있는 건널목':'신호등 없는 건널목';cSub.textContent=c.sig==="Y"&&c.g?('초록불 '+c.g+'초 · 내 걸음으론 '+need(c)+'초 필요'):(c.sig==="Y"?'녹색신호 시간 데이터 없음':'멈춰서 좌우 확인 후 건너는 곳');
   const B=[['🚦 신호등',c.sig==="Y"],['🔊 음향신호기',c.snd==="Y"],['🟨 점자블록',c.brl==="Y"],['♿ 보도턱 낮춤',c.low==="Y"],['💡 보안등 '+c.lit,c.lit>0],['📹 CCTV 50m',CCTV.some(x=>dist({lat:x[0],lng:x[1]},c)<=50)]];
   cBadges.innerHTML=B.map(b=>'<span class="bd '+(b[1]?'on':'off')+'">'+b[0]+'</span>').join('');const J=[];if(c.sig!=="Y")J.push('<span class="chip no">신호 없음</span>');if(short(c))J.push('<span class="chip mid">한 번에 못 건너요 — 켜지자마자 출발</span>');else if(c.sig==="Y"&&c.g)J.push('<span class="chip ok">한 번에 건너요</span>');if(c.acc)J.push('<span class="chip no">사고다발 100m 안</span>');if(dark(c))J.push('<span class="chip mid">어두운 곳</span>');cJudge.innerHTML=J.join('');show('sh-card');}
@@ -652,8 +652,7 @@ function openWarn(i){curWarn=i;const s=ROUTES[cur].segs[i];const ev=segEval(s);c
   if(c&&c.sig==="Y"&&c.g){const nd=need(c),gap=nd-c.g;wBig.innerHTML='<div class="big"><span class="n '+(gap>0?'red':'green')+'">'+c.g+'<small style="font-size:14px">초</small></span><small>초록불</small><span class="n" style="font-size:22px;color:var(--sub)">vs</span><span class="n">'+nd+'<small style="font-size:14px">초</small></span><small>내 걸음</small></div>'+(gap>0?'<div class="gap">⏱ '+gap+'초 부족 — 켜지자마자 출발, 이미 켜졌으면 다음 신호</div>':'<div class="gap" style="background:#E6F8EE;color:#0A8A45">✅ '+(-gap)+'초 여유 — 한 번에 건너요</div>');
     startLive(c);}
   else{wBig.innerHTML='';wLive.innerHTML='';stopLive();}
-  const why=[];if(c){if(c.sig!=="Y")why.push(['+41','신호등 없음']);if(c.acc)why.push(['+27','100m 안 사고다발(2024)']);if(c.lanes>=4)why.push(['+12',c.lanes+'차로 · 횡단거리 '+(c.lanes*3.25).toFixed(0)+'m']);if(c.lit===0)why.push(['+9','보안등 30m 없음']);if(short(c))why.push(['+15','녹색초 부족']);if(c.snd==="Y")why.push(['−6','음향신호기 있음']);}
-  wWhy.innerHTML=why.length?'<div class="src" style="margin:8px 0 2px">왜 조심해야 하나요</div>'+why.slice(0,3).map(w=>'<div class="w"><b>'+w[0]+'</b>'+w[1]+'</div>').join(''):'';
+    wWhy.innerHTML="";
   const btn=document.getElementById('wDetour');if(s.alt&&!useAlt[s.id]){btn.style.display='';btn.textContent=(s.kind==='slope'?(night?'안심길로 우회':'완만한 길로 우회'):'다른 건널목으로 우회')+' (+'+(s.alt.m-s.m)+'m)';btn.onclick=()=>{useAlt[s.id]=true;drawRoute();toast('구간 '+(i+1)+'만 우회했어요 — 나머지는 그대로');say('이 구간만 돌아가요.');show('sh-route');};}
   else if(s.alt&&useAlt[s.id]){btn.style.display='';btn.textContent='원래 길로 되돌리기';btn.onclick=()=>{delete useAlt[s.id];drawRoute();show('sh-route');};}
   else {btn.style.display='';btn.textContent=ev.level==='ok'?'이 구간은 우회가 필요 없어요':'우회 경로 없음 — 이 건널목에서 조심';btn.onclick=()=>toast(ev.level==='ok'?'괜찮은 구간이에요':'근처에 더 나은 건널목이 없어요 — 알려만 드려요');}
@@ -664,7 +663,7 @@ function startLive(c){stopLive();let red=true,left=12;const g=c.g||25;const draw
 function stopLive(){if(liveT){clearInterval(liveT);liveT=null;}}
 function backHome(){stopLive();routeMode=false;layersOnMap.forEach(l=>l.remove());warnMarkers.forEach(m=>m.remove());layersOnMap=[];warnMarkers=[];map.setView([37.5008,126.9262],17);qtext.textContent='어디로 가요?';render();show('sh-home');}
 function fitRoute(){if(!cur)return;layersOnMap.forEach(pl=>pl.setStyle({opacity:.95,weight:7}));const R=ROUTES[cur];map.fitBounds(L.latLngBounds([[SCHOOL.lat,SCHOOL.lng],[R.dest.lat,R.dest.lng]]).pad(.35));}
-let shared=false;function shareGuardian(){shared=true;toast('👪 보호자에게 공유됨 — 출발·도착·지연 알림만 (위치 X)');say('보호자에게 길을 공유했어요.');}
+let shared=false;function shareGuardian(){shared=true;toast("👪 보호자에게 공유했어요");say('보호자에게 길을 공유했어요.');}
 let fi=0;
 function startWalk(share){fi=0;const eta=clock.textContent.replace(/(\d+):(\d+)/,(m,h,mm)=>String(+h).padStart(2,'0')+':'+String((+mm+9)%60).padStart(2,'0'));if(shared){toast('🏫 출발 · 도착 예정 '+eta+' → 보호자에게 알림 전송');say('출발! 보호자에게 알려드렸어요.');}else{toast('길 안내 시작 · 도착 예정 '+eta);say('길 안내를 시작할게요.');}renderFollow();show('sh-follow');}
 function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=segEval(s);fEye.textContent='구간 '+(fi+1)+'/'+segs.length+' · '+((useAlt[s.id]&&s.alt)?s.alt.m:s.m)+'m 앞';
