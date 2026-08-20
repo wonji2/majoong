@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>마중길 — 액션 목업 v7 (온보딩 · 깨끗한 지도 · 분석 동작)</title>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=860978723be1a27dd6613aa69395b2ad"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=860978723be1a27dd6613aa69395b2ad&libraries=services"></script>
 <style>
 :root{--brand:#FF5C8A;--soft:#FFF0F5;--ink:#1F1F23;--sub:#6e6e73;--sub2:#8f959e;--bg:#f5f5f7;--card:#fff;--green:#00B75C;--red:#ED2831;--amber:#FF9500;--grey:#B0B4BC;--pill:999px;}
 *{margin:0;padding:0;box-sizing:border-box;font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-tap-highlight-color:transparent;}
@@ -140,15 +140,6 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  <div class="toast" id="toast"></div>
 
  <!-- v6 오프닝: 조준점 하나 -->
- <div class="splash" id="splash">
-  <div class="logo">마중길</div>
-  <h1>노량진로 이 횡단보도,<br>초록불 <em>26초</em>.<br>초1 걸음으로는 <em>36초</em>.</h1>
-  <p>어른은 이 10초를 평생 모릅니다.</p>
-  <div class="big"><span class="n red">62<small style="font-size:16px">곳</small></span><small>동작구 신호등 중<br>아이 걸음으로 한 번에 못 건너는 곳</small></div>
-    <button class="btn p" onclick="document.getElementById('splash').classList.add('hide');show('sh-onb');say('마중길은 이 10초를 계산하는 지도입니다.')">마중길은 이 10초를 계산하는 지도입니다 →</button>
-  <div class="src" style="text-align:center">같은 엔진 · 다른 걸음속도(0.7 / 0.8 / 1.0) = 어르신·휠체어·유모차도 그대로</div>
- </div>
-
  <div class="top">
   <div class="search" onclick="openSearch()"><span>🔍</span><span class="q" id="qtext">주소·장소 검색 (어디로 가요?)</span><span class="time" id="timechip">하교 14~18시</span></div>
   <div class="layers">
@@ -189,33 +180,12 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  <div class="voice" id="voiceBtn" title="음성 안내 (설정에서 켜기)">🔇</div>
  <div class="tbar"><span class="now" id="nowBtn">● 실시간</span><input type="range" id="tslider" min="8" max="20" step="0.5" value="14.5"><div class="clock"><span id="clock">14:30</span><small>하교 시간대</small></div></div>
 
- <!-- v7 온보딩: 그늘로처럼 첫 실행에 장소·걸음 저장 -->
- <div class="sheet hide" id="sh-onb">
-  <div class="grab"></div>
-  <div class="eyebrow">처음 한 번만 · 이 기기에 저장</div>
-  <h2>자주 가는 곳을 저장해요</h2>
-  <div class="sub">집·학교·학원을 별칭으로 저장하면 다음부터 한 번에 길을 찾아요. 로그인 없음 · 위치 저장 없음.</div>
-  <div class="inp" style="margin-top:12px"><span>🏫</span><input value="서울대림초등학교" readonly><span class="chip ok">학교</span></div>
-  <div class="inp"><span>🏠</span><input id="onbHome" placeholder="집 주소 (예: 여의대방로44길 39)" value="서울 동작구 여의대방로44길 39"><span class="chip ok">집</span></div>
-  <div class="inp"><span>🥋</span><input placeholder="학원·도장 (선택)" value="△△태권도장"><span class="chip">학원</span></div>
-  <div class="chips"><span class="chip">＋ 할머니집</span><span class="chip">＋ 돌봄교실</span><span class="chip">＋ 친구집</span></div>
-  <h4 style="font-size:14px;font-weight:800;margin-top:14px">🚶 걸음</h4>
-  <div class="seg" id="onbSpeed"><div data-v="1.0">뛸 수 있어요</div><div data-v="0.8" class="on">보통</div><div data-v="0.7">천천히 걸어요</div></div>
-  <div class="src">나중에 상단 🚶 칩에서 바꿀 수 있어요.</div>
-  <button class="btn p" onclick="finishOnb()">저장하고 시작하기</button>
-  <div class="src" style="text-align:center">보호자 알림은 나중에 켤 수 있어요</div>
- </div>
-
  <!-- 홈: 자주 가는 길 -->
  <div class="sheet hide" id="sh-home">
   <div class="grab"></div>
-  <div class="eyebrow">초1이 혼자 건너는 길 · 자주 가는 길</div>
+  <div class="eyebrow">자주 가는 길</div>
   <h2>어디로 갈까요?</h2>
-  <div class="fav">
-   <div class="favc" onclick="preview('home')"><b>🏫 대림초 → 🏠 집</b><span>720m · 건널목 3 · 보통 걸음</span></div>
-   <div class="favc" onclick="preview('dojang')"><b>🏫 대림초 → 🥋 태권도</b><span>430m · 건널목 2</span></div>
-   <div class="favc add">＋</div>
-  </div>
+  <div class="fav" id="favWrap"></div>
   <div class="statrow"><div class="stat bad"><b id="cntNoSig"></b><span>신호 없는 건널목</span></div><div class="stat warn"><b id="cntShort"></b><span>내 걸음엔 짧은 신호</span></div><div class="stat"><b id="cntDark"></b><span>어두운 곳</span></div><div class="stat bad"><b id="cntAcc"></b><span>사고다발 100m</span></div></div>
   <div class="src">공공데이터를 반영해요 · 대림초 반경 300m</div>
  </div>
@@ -223,13 +193,11 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  <!-- 주소 입력 (그늘로 메인 검색 문법: 출발·도착 + 저장 장소 칩 + 최근) -->
  <div class="sheet hide" id="sh-search">
   <div class="grab"></div>
-  <div class="eyebrow">길 찾기</div>
-  <h2>어디에서 어디로 가요?</h2>
-  <div class="inp"><span class="dot" style="background:var(--green)"></span><input id="inFrom" value="서울대림초등학교 (현재 위치)" readonly></div>
-  <div class="inp"><span class="dot" style="background:var(--brand)"></span><input id="inTo" placeholder="도착지 주소·장소 입력" oninput="searchSuggest(this.value)" autocomplete="off"></div>
-  <div class="chips"><span class="chip ok" onclick="pickDest('home')">🏠 집</span><span class="chip ok" onclick="pickDest('dojang')">🥋 태권도</span><span class="chip" onclick="pickDest('school')">🏫 학교</span><span class="chip" onclick="pickDest('gm')">👵 할머니집</span><span class="chip">＋ 장소 저장</span></div>
+  <div class="eyebrow">마중길</div>
+  <h2>어디로 가요?</h2>
+  <div class="inp"><span>🔍</span><input id="inTo" placeholder="장소·주소 검색 (예: 대림초, 우리 집 주소)" oninput="searchSuggest(this.value)" autocomplete="off"></div>
+  <div class="chips" id="savedChips"></div>
   <div id="sugList"></div>
-  <div class="src">자주 가는 곳은 저장해두면 한 번에 찾아요.</div>
  </div>
 
  <!-- 길 미리보기 -->
@@ -566,7 +534,7 @@ function render(){
 document.querySelectorAll('#layers .gi[data-l]').forEach(el=>el.onclick=()=>{document.querySelectorAll('#layers .gi').forEach(x=>x.classList.remove('on'));el.classList.add('on');layer=el.dataset.l;render();});
 tslider.oninput=e=>{hour=+e.target.value;const h=Math.floor(hour),m=hour%1?'30':'00';clock.textContent=String(h).padStart(2,'0')+':'+m;timechip.textContent=hour>=14&&hour<18?'하교 14~18시':(isNight()?'해 진 뒤 🌙':'낮');nowBtn.textContent=Math.abs(hour-14.5)<.01?'● 실시간':'시간 이동';if(isNight()&&!night){night=true;document.getElementById('swNight').classList.add('on');fNight.classList.add('on');toast("해가 졌어요 — 안심길 자동 켜짐");}if(routeMode)drawRoute();else render();};
 
-const sheets=['sh-onb','sh-search','sh-home','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card'];
+const sheets=['sh-search','sh-home','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card'];
 function show(id){if(id!=='sh-warn')stopLive();sheets.forEach(s=>document.getElementById(s).classList.toggle('hide',s!==id));}
 document.querySelectorAll('.rbtn[data-r]').forEach(b=>b.onclick=()=>{const k=b.dataset.r;const p=document.getElementById('pop-'+k);const open=p.classList.contains('hide');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));if(open){p.classList.remove('hide');b.classList.add('on');}
   if(k==='layer'){layerOn=open;if(layerOn&&map.getZoom()<17)map.setZoom(17);render();if(layerOn)toast("건널목 보기 켜짐");}});
@@ -672,14 +640,37 @@ function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=se
   fLeft.textContent=segs.filter((x,k)=>k>=fi&&segEval(x).cw).length;fMin.textContent=Math.max(1,Math.round(segs.slice(fi).reduce((a,x)=>a+((useAlt[x.id]&&x.alt)?x.alt.m:x.m),0)/(speed*60*0.9)))+'분';
   const pts=(useAlt[s.id]&&s.alt)?s.alt.pts:s.pts;map.panTo(pts[0]);say(fSub.textContent);}
 function nextStep(){const segs=ROUTES[cur].segs;if(fi>=segs.length-1){toast('🏠 도착했어요 · 건널목 '+segs.filter(x=>segEval(x).cw).length+'곳 지났어요'+(shared?' → 보호자에게 전송됨':''));say('도착! 잘 왔어요.');backHome();return;}fi++;renderFollow();}
-function finishOnb(){const v=onbSpeed.querySelector('.on').dataset.v;speed=+v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';segSpeed.querySelectorAll('div').forEach(x=>x.classList.toggle('on',x.dataset.v===v));toast('저장됐어요 — 🏫 대림초 · 🏠 집 · 🥋 태권도');show('sh-home');render();}
-onbSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{onbSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');});
 render();renderPOI();
-/* 주소 검색 (예시: 실주소 일부) */
-const SUG=[["서울특별시 동작구 여의대방로44길 39","대방동 · 집 근처","home"],["서울특별시 동작구 상도로 170","상도동 · 장승배기역 3번출구","home"],["대방어린이집","서울특별시 동작구 대방동","home"],["△△태권도장","대방동 · 도보 6분","dojang"],["보라매병원","서울특별시 동작구 보라매로5길 20","home"],["대방역 3번출구","지하철 1호선","home"]];
-function openSearch(){if(routeMode)return;show('sh-search');searchSuggest('');setTimeout(()=>document.getElementById('inTo').focus(),100);}
-function searchSuggest(q){const L=SUG.filter(s=>!q||s[0].includes(q)||s[1].includes(q));sugList.innerHTML=(q?'':'<div class="src" style="margin:6px 0 2px">최근 · 추천</div>')+(L.map(s=>'<div class="sug" onclick="pickDest(\''+s[2]+'\',\''+s[0]+'\')">📍 '+s[0]+'<small>'+s[1]+'</small></div>').join('')||'<div class="src">검색 결과 없음 (예시 목록)</div>');}
-function pickDest(key,label){if(key==='school'||key==='gm'){toast('예시: 저장 장소 '+(key==='gm'?'할머니집':'학교')+' — 목업엔 경로 없음');return;}document.getElementById('inTo').value=label||(key==='home'?'🏠 집':'🥋 태권도');preview(key);}
+
+/* ── 카카오 로컬 실검색 + 장소 저장 ── */
+const PLACES_KEY='mj_places';
+const loadPlaces=()=>{try{return JSON.parse(localStorage.getItem(PLACES_KEY)||'[]')}catch(e){return[]}};
+const KP=new kakao.maps.services.Places();
+let searchT=null,RES=[],SEL=null,placeMarkers=[];
+function openSearch(){if(routeMode)return;show('sh-search');searchSuggest(document.getElementById('inTo').value||'');setTimeout(()=>document.getElementById('inTo').focus(),100);}
+function searchSuggest(q){clearTimeout(searchT);if(!q||q.length<2){sugList.innerHTML='<div class="src" style="margin-top:8px">두 글자 이상 입력하면 검색돼요</div>';return;}
+ searchT=setTimeout(()=>{KP.keywordSearch(q,(data,status)=>{if(status!==kakao.maps.services.Status.OK){sugList.innerHTML='<div class="src" style="margin-top:8px">검색 결과가 없어요</div>';return;}
+  RES=data.slice(0,7);sugList.innerHTML=RES.map((d,i)=>'<div class="sug" onclick="chooseRes('+i+')">📍 '+d.place_name+'<small>'+(d.road_address_name||d.address_name||'')+'</small></div>').join('');});},350);}
+function chooseRes(i){SEL=RES[i];map.setView([+SEL.y,+SEL.x],17);
+ sugList.innerHTML='<div class="sug" style="border:0">📍 <b>'+SEL.place_name+'</b><small>'+(SEL.road_address_name||SEL.address_name||'')+'</small></div>'
+ +'<div class="src" style="margin:6px 0 4px">어떤 곳이에요?</div><div class="chips">'
+ +['🏠 집','🏫 학교','📚 학원','👵 할머니집','⭐ 자주 가요'].map(l=>'<span class="chip ok" onclick="savePlace(''+l+'')" style="padding:8px 13px;font-size:13px">'+l+'</span>').join('')
+ +'<span class="chip" onclick="goPlaceTemp()" style="padding:8px 13px;font-size:13px">저장 없이 바로 가기</span></div>';}
+function savePlace(label){if(!SEL)return;const ps=loadPlaces();ps.push({label:label,name:SEL.place_name,lat:+SEL.y,lng:+SEL.x});localStorage.setItem(PLACES_KEY,JSON.stringify(ps));toast(label+' 저장!');document.getElementById('inTo').value='';renderPlaces();show('sh-home');}
+function goPlaceTemp(){if(!SEL)return;map.setView([+SEL.y,+SEL.x],17);show('sh-home');toast('📍 '+SEL.place_name);}
+function delPlace(i){const ps=loadPlaces();ps.splice(i,1);localStorage.setItem(PLACES_KEY,JSON.stringify(ps));renderPlaces();}
+function goPlace(i){const p=loadPlaces()[i];if(!p)return;
+ if(p.label.includes('집')&&dist({lat:p.lat,lng:p.lng},SCHOOL)<1500){preview('home');return;}
+ if(p.label.includes('학원')&&dist({lat:p.lat,lng:p.lng},SCHOOL)<1500){preview('dojang');return;}
+ map.setView([p.lat,p.lng],17);toast(p.label+' '+p.name);}
+function renderPlaces(){const ps=loadPlaces();
+ placeMarkers.forEach(m=>m.remove());placeMarkers=ps.map(p=>L.marker([p.lat,p.lng],ico('<div class="mk home"><div class="bub">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</div><div class="tail"></div></div>',850)).addTo(map));
+ const w=document.getElementById('favWrap');
+ if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch()"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div><div class="favc" onclick="preview('home')"><b>🏫 대림초 → 🏠 집</b><span>둘러보기 (예시)</span></div>';}
+ else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
+ const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show('sh-home')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
+renderPlaces();
+show(loadPlaces().length?'sh-home':'sh-search');
 </script>
 </body>
 </html>
