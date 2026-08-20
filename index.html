@@ -151,20 +151,19 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
    <div id="sugList"></div>
   </div>
   <div class="layers">
-   <div class="fchip on" id="fWalk">🚶 보통 ▾</div>
-   <div class="fchip on" id="fSig">🚦 신호등만 ▾</div>
-   <div class="fchip" id="fNight">🌙 안심길 ▾</div>
-   <div class="fchip" id="fWheel">♿ 휠체어·유모차 ▾</div>
+   <div class="fchip on" id="fSummary" onclick="show('sh-pref')">⚙ 보통 · 신호등만 ▾</div>
+   <div class="fchip pchip" data-p="bus">🚌 버스</div>
+   <div class="fchip pchip" data-p="school">🏫 학교</div>
+   <div class="fchip pchip" data-p="hosp">🏥 병원</div>
+   <div class="fchip pchip" data-p="pharm">💊 약국</div>
+   <div class="fchip pchip" data-p="cctv">📹 CCTV</div>
   </div>
  </div>
  <div class="rstack">
-  <div class="rbtn" data-r="layer">건널목<br>보기</div>
-  <div class="rbtn on" data-r="poi">주변</div>
+  <div class="rbtn" data-r="layer">테마</div>
   <div class="rbtn" data-r="analysis">분석</div>
   <div class="rbtn" id="hideBtn">숨김</div>
  </div>
- <div class="pop hide" id="pop-poi">
-  <div class="pop-h">주변정보</div>
   <div class="pop-i poi" data-p="bus">🚌 버스정류장</div>
   <div class="pop-i poi on" data-p="school">🏫 학교</div>
   <div class="pop-i poi" data-p="aca">📚 학원 · 🥋 도장</div>
@@ -174,13 +173,13 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="pop-src">버스·병원·약국·CCTV = 실데이터(서울시·심평원·행안부). 학원은 NEIS 주소(지오코딩 예정).</div>
  </div>
  <div class="pop hide grid" id="pop-layer">
-  <div class="pop-h">건널목 보기</div>
+  <div class="pop-h" style="position:relative">건널목 보기<span onclick="closePops()" style="position:absolute;right:10px;cursor:pointer;color:var(--sub)">✕</span></div>
   <div class="gwrap" id="layers">
    <div class="gi on" data-l="sig">🚦 신호등</div><div class="gi" data-l="green">⏱ 초록불</div><div class="gi" data-l="snd">🔊 음향신호기</div><div class="gi" data-l="brl">🟨 점자블록</div><div class="gi" data-l="low">♿ 보도턱</div><div class="gi" data-l="lit">💡 밝기</div><div class="gi" data-l="acc">⚠️ 사고다발</div><div class="gi" data-l="slope">⛰ 경사</div>
   </div>
  </div>
  <div class="pop hide grid" id="pop-analysis">
-  <div class="pop-h">분석</div>
+  <div class="pop-h" style="position:relative">분석<span onclick="closePops()" style="position:absolute;right:10px;cursor:pointer;color:var(--sub)">✕</span></div>
   <div class="gwrap"><div class="gi" onclick="preview('home');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'))">🎬 길 미리보기 시연</div><div class="gi" onclick="show('sh-report');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'))">🏫 학교별 통학로 리포트</div><div class="gi">⏰ 시간대별 사고</div><div class="gi">🌙 어두운 건널목</div><div class="gi">🚲 자전거 사고</div><div class="gi" title="성남시 API: 분당 횡단보도 37%가 우회전 사각지대 (분당 단계)">↪ 우회전 사각지대 (분당)</div><div class="gi" title="성남 옐로카펫 152 · 동작 16">🟨 옐로카펫 대기위치</div><div class="gi off">📈 위험도 추이(본선)</div><div class="gi">🚦 실시간 신호 (API 수신 중)</div></div>
  </div>
 
@@ -492,7 +491,7 @@ DEMO.push(L.marker([DOJANG.lat,DOJANG.lng],ico('<div class="mk home"><div class=
 const POI={bus:BUS.map(b=>[b[0],b[1],'🚌 '+b[2]]),hosp:HOSP.map(h=>[h[0],h[1],'🏥 '+h[2].slice(0,10)+'<small>'+h[3]+'</small>']),pharm:PHARM.map(p=>[p[0],p[1],'💊 '+p[2]]),cctv:CCTV.map(c=>[c[0],c[1],'📹']),school:[[SCHOOL.lat,SCHOOL.lng,'🏫 서울대림초']],aca:[[37.5002,126.9278,'📚 ○○수학 (예시)'],[37.4998,126.9262,'🥋 △△태권도 (예시)']]};
 const poiLayers={};Object.keys(POI).forEach(k=>{poiLayers[k]=L.layerGroup(POI[k].map(p=>L.marker([p[0],p[1]],ico('<div class="mk poi"><div class="bub">'+p[2]+'</div><div class="tail"></div></div>',50)).on('click',()=>{if(k==='hosp'||k==='pharm'){toast('[여기까지 안전하게] → 현재 걷기 설정으로 길 찾기');}})));});
 function renderPOI(){Object.keys(POI).forEach(k=>{if(poiOn[k]&&!hidden)poiLayers[k].addTo(map);else poiLayers[k].remove();});}
-document.querySelectorAll('#pop-poi .poi').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();});
+document.querySelectorAll('.pchip').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();});
 
 /* crosswalk markers */
 function cls(c){
@@ -546,11 +545,12 @@ const ANA={
 };
 document.querySelectorAll('#pop-analysis .gi').forEach(g=>{const t=g.textContent.trim();if(ANA[t])g.onclick=()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));ANA[t]();};else if(g.classList.contains('off'))g.onclick=()=>toast('본선에서 구현 예정');});
 hideBtn.onclick=()=>{hidden=!hidden;hideBtn.classList.toggle('on',hidden);render();renderPOI();};
+function closePops(){document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));layerOn=false;render();}
 map.on('click',()=>{if(!routeMode)closeSearch();document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));});
-fWalk.onclick=fSig.onclick=fNight.onclick=fWheel.onclick=()=>show('sh-pref');
-function toggleNight(){night=document.getElementById('swNight').classList.contains('on');fNight.classList.toggle('on',night);if(routeMode)drawRoute();}
-function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');fWheel.classList.toggle('on',wheel);if(routeMode)drawRoute();}
-segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';render();if(routeMode)drawRoute();});
+function updateSummary(){const sig=document.querySelector('#segSig .on');const parts=[WALKNM[speed]||'보통',sig?sig.textContent.trim():'신호등만'];if(night)parts.push('🌙');if(wheel)parts.push('♿');fSummary.textContent='⚙ '+parts.join(' · ')+' ▾';}
+function toggleNight(){night=document.getElementById('swNight').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
+function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
+segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;updateSummary();render();if(routeMode)drawRoute();});
 voiceBtn.onclick=()=>{voiceOn=!voiceOn;voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);document.getElementById("swVoice").classList.toggle("on",voiceOn);toast(voiceOn?"음성 안내 켜짐":"음성 안내 꺼짐");};document.getElementById("swVoice").addEventListener("click",()=>{voiceOn=document.getElementById("swVoice").classList.contains("on");voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);});
 function openCard(i){if(routeMode)return;selected=i;render();const c=CW[i];cRoad.textContent=(c.rd||'도로명 없음')+' · '+c.lanes+'차로';cTitle.textContent=c.sig==="Y"?'신호등 있는 건널목':'신호등 없는 건널목';cSub.textContent=c.sig==="Y"&&c.g?('초록불 '+c.g+'초 · 내 걸음으론 '+need(c)+'초 필요'):(c.sig==="Y"?'녹색신호 시간 데이터 없음':'멈춰서 좌우 확인 후 건너는 곳');
   const B=[['🚦 신호등',c.sig==="Y"],['🔊 음향신호기',c.snd==="Y"],['🟨 점자블록',c.brl==="Y"],['♿ 보도턱 낮춤',c.low==="Y"],['💡 보안등 '+c.lit,c.lit>0],['📹 CCTV 50m',CCTV.some(x=>dist({lat:x[0],lng:x[1]},c)<=50)]];
@@ -664,8 +664,8 @@ function renderPlaces(){const ps=loadPlaces();
  if(!ps.length){w.innerHTML='<div class="favc" onclick="openSearch(1)"><b>＋ 자주 가는 곳 저장</b><span>집·학교·학원을 저장해두면 한 번에 찾아요</span></div>';}
  else{w.innerHTML=ps.map((p,i)=>'<div class="favc" onclick="goPlace('+i+')" oncontextmenu="event.preventDefault();delPlace('+i+')"><b>'+p.label.split(' ')[0]+' '+p.name.slice(0,10)+'</b><span>'+p.label+'</span></div>').join('')+'<div class="favc add" onclick="openSearch()">＋</div>';}
  const st=document.querySelector('#sh-home .statrow');if(st)st.style.display=ps.length?'':'none';const sr=document.querySelector('#sh-home > .src');if(sr)sr.style.display=ps.length?'':'none';const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
-['segSig','segLight'].forEach(id=>{const el=document.getElementById(id);el.querySelectorAll('div').forEach(d=>d.onclick=()=>{el.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');if(id==='segSig'){fSig.textContent='🚦 '+d.textContent.trim()+' ▾';fSig.classList.toggle('on',d.textContent.trim()!=='상관없어요');}});});
-renderPlaces();
+['segSig','segLight'].forEach(id=>{const el=document.getElementById(id);el.querySelectorAll('div').forEach(d=>d.onclick=()=>{el.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');updateSummary();});});
+updateSummary();renderPlaces();
 show('sh-home');if(!loadPlaces().length)setTimeout(openSearch,400);
 </script>
 </body>
