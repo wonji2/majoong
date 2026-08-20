@@ -548,9 +548,7 @@ const ANA={
 document.querySelectorAll('#pop-analysis .gi').forEach(g=>{const t=g.textContent.trim();if(ANA[t])g.onclick=()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));ANA[t]();};else if(g.classList.contains('off'))g.onclick=()=>toast('본선에서 구현 예정');});
 hideBtn.onclick=()=>{hidden=!hidden;hideBtn.classList.toggle('on',hidden);render();renderPOI();};
 map.on('click',()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));});
-fWalk.onclick=fSig.onclick=()=>show('sh-pref');
-fNight.onclick=()=>{night=!night;document.getElementById('swNight').classList.toggle('on',night);toggleNight();};
-fWheel.onclick=()=>{wheel=!wheel;document.getElementById('swWheel').classList.toggle('on',wheel);toggleWheel();};
+fWalk.onclick=fSig.onclick=fNight.onclick=fWheel.onclick=()=>show('sh-pref');
 function toggleNight(){night=document.getElementById('swNight').classList.contains('on');fNight.classList.toggle('on',night);if(routeMode)drawRoute();}
 function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');fWheel.classList.toggle('on',wheel);if(routeMode)drawRoute();}
 segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';render();if(routeMode)drawRoute();});
