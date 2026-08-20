@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마중길 — 액션 목업 v7 (온보딩 · 깨끗한 지도 · 분석 동작)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--brand:#FF5C8A;--soft:#FFF0F5;--ink:#1F1F23;--sub:#6e6e73;--sub2:#8f959e;--bg:#f5f5f7;--card:#fff;--green:#00B75C;--red:#ED2831;--amber:#FF9500;--grey:#B0B4BC;--pill:999px;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;-webkit-tap-highlight-color:transparent;}
+body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24px 0;min-height:100vh;}
+.phone{width:390px;height:820px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.18);flex-shrink:0;}
+#map{position:absolute;inset:0;z-index:1;}
+.leaflet-control-attribution{font-size:9px;}
+.statusbar{position:absolute;top:0;left:0;right:0;height:44px;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;}
+.top{position:absolute;top:50px;left:12px;right:70px;z-index:30;}
+.search{background:var(--card);border-radius:16px;padding:11px 14px;font-size:14.5px;color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;}
+.search .q{flex:1;font-weight:700;}
+.search .time{background:var(--soft);color:var(--brand);border-radius:var(--pill);padding:5px 9px;font-size:11px;font-weight:800;white-space:nowrap;}
+.layers{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.layers::-webkit-scrollbar{display:none;}
+.fchip{background:#fff;border:1.5px solid #e0e0e6;color:var(--ink);font-size:12px;padding:8px 12px;border-radius:var(--pill);font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.fchip.on{border-color:var(--brand);background:var(--soft);color:var(--brand);}
+.rstack{position:absolute;right:12px;top:50px;z-index:30;display:flex;flex-direction:column;gap:6px;}
+.rbtn{width:50px;height:42px;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 2px 8px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--ink);cursor:pointer;text-align:center;line-height:1.1;}
+.rbtn.on{background:var(--brand);color:#fff;}
+.pop{position:absolute;right:70px;top:50px;z-index:32;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:12px;width:200px;}
+.pop.hide{display:none;} .pop.grid{width:286px;}
+.pop-h{border-radius:12px;padding:9px;text-align:center;font-weight:800;font-size:13px;color:var(--ink);background:var(--bg);margin-bottom:8px;}
+.pop-i{border:1.5px solid #e6e6ea;border-radius:12px;padding:9px;text-align:center;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;cursor:pointer;}
+.pop-i.on{border-color:var(--brand);background:var(--soft);color:var(--brand);}
+.pop-src{font-size:9.5px;color:var(--sub2);line-height:1.4;margin-top:4px;}
+.gwrap{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.gi{border:1.5px solid #e6e6ea;border-radius:12px;padding:9px 4px;text-align:center;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;}
+.gi.on{border-color:var(--ink);background:var(--ink);color:#fff;} .gi.off{color:#b5b8bf;border-style:dashed;cursor:default;}
+.legend{position:absolute;left:12px;bottom:210px;background:rgba(255,255,255,.96);border-radius:12px;padding:8px 11px;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.10);font-size:11px;color:var(--sub);line-height:1.7;}
+.legend b{display:block;font-size:11px;color:var(--ink);}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px;}
+.bar{display:inline-block;width:18px;height:5px;border-radius:3px;margin-right:5px;vertical-align:2px;}
+.tbar{position:absolute;left:12px;right:12px;bottom:140px;z-index:25;background:rgba(255,255,255,.97);border-radius:var(--pill);padding:8px 10px 8px 8px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.12);}
+.tbar .now{background:var(--ink);color:#fff;border-radius:var(--pill);padding:7px 12px;font-size:12px;font-weight:800;white-space:nowrap;}
+.tbar input{flex:1;accent-color:var(--brand);}
+.tbar .clock{font-size:14px;font-weight:800;color:var(--ink);min-width:44px;text-align:right;}
+.tbar .clock small{display:block;font-size:9px;color:var(--sub);font-weight:600;}
+.mk{transform:translate(-50%,-100%);}
+.bub{border-radius:11px;padding:4px 7px;font-size:10.5px;font-weight:800;color:#fff;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.25);line-height:1.15;text-align:center;}
+.bub small{display:block;font-size:8px;font-weight:700;opacity:.92;}
+.tail{width:0;height:0;border:5px solid transparent;margin:0 auto;}
+.g .bub{background:var(--green);}.g .tail{border-top-color:var(--green);}
+.rr .bub{background:var(--red);}.rr .tail{border-top-color:var(--red);}
+.a .bub{background:var(--amber);}.a .tail{border-top-color:var(--amber);}
+.n .bub{background:var(--grey);}.n .tail{border-top-color:var(--grey);}
+.dim{opacity:.18;} .sel .bub{outline:2.5px solid var(--ink);}
+.school .bub{background:var(--brand);font-size:11px;padding:5px 9px;} .school .tail{border-top-color:var(--brand);}
+.home .bub{background:var(--ink);} .home .tail{border-top-color:var(--ink);}
+.poi .bub{background:#fff;color:var(--ink);border:1.5px solid #e6e6ea;font-weight:700;} .poi .tail{border-top-color:#e6e6ea;}
+.warn .bub{background:#fff;color:var(--red);border:2px solid var(--red);font-size:12px;padding:4px 8px;} .warn .tail{border-top-color:var(--red);}
+.warn.amb .bub{color:#B36200;border-color:var(--amber);} .warn.amb .tail{border-top-color:var(--amber);}
+.warn.done .bub{color:#0A8A45;border-color:var(--green);} .warn.done .tail{border-top-color:var(--green);}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.14);z-index:35;padding:10px 18px 18px;max-height:80%;overflow-y:auto;transition:transform .25s;}
+.sheet.hide{transform:translateY(110%);}
+.grab{width:36px;height:4px;border-radius:2px;background:#d2d2d7;margin:0 auto 12px;}
+.sheet h2{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.02em;line-height:1.3;}
+.sheet .sub{font-size:12px;color:var(--sub);margin-top:3px;}
+.eyebrow{font-size:11.5px;color:var(--brand);font-weight:800;margin-bottom:2px;}
+.statrow{display:flex;gap:8px;margin:12px 0;}
+.stat{flex:1;background:var(--bg);border-radius:14px;padding:10px 6px;text-align:center;}
+.stat b{display:block;font-size:20px;font-weight:800;color:var(--ink);}
+.stat.bad b{color:var(--red);} .stat.warn b{color:var(--amber);} .stat.ok b{color:#0A8A45;}
+.stat span{font-size:10.5px;color:var(--sub);font-weight:600;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;}
+.chip{border-radius:var(--pill);padding:5px 10px;font-size:11px;font-weight:700;background:var(--bg);color:var(--ink);}
+.chip.ok{background:#E6F8EE;color:#0A8A45;} .chip.no{background:#FDECEE;color:var(--red);} .chip.mid{background:#FFF3E0;color:#B36200;}
+.btn{display:block;width:100%;border:0;border-radius:var(--pill);padding:14px;font-size:15px;font-weight:800;cursor:pointer;margin-top:12px;}
+.btn.p{background:var(--brand);color:#fff;} .btn.s{background:var(--bg);color:var(--ink);} .btn.o{background:#fff;border:2px solid var(--brand);color:var(--brand);}
+.row2{display:flex;gap:8px;} .row2 .btn{margin-top:10px;}
+.src{font-size:10px;color:var(--sub2);margin-top:10px;line-height:1.5;}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.bd{border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;background:var(--bg);color:var(--ink);}
+.bd.on{background:#E6F8EE;color:#0A8A45;} .bd.off{background:#F1F1F3;color:#9a9ca3;text-decoration:line-through;}
+.seg{display:flex;gap:8px;margin:8px 0 4px;}
+.seg div{flex:1;border:1.5px solid #e6e6ea;border-radius:14px;padding:11px 4px;text-align:center;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;line-height:1.3;}
+.seg div small{font-weight:600;color:var(--sub);font-size:9.5px;display:block;}
+.seg div.on{border-color:var(--brand);background:var(--soft);color:var(--brand);}
+.pref h4{font-size:14px;font-weight:800;color:var(--ink);margin-top:14px;}
+.pref .src{margin-top:4px;}
+.tg{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f2;font-size:13.5px;font-weight:700;color:var(--ink);}
+.sw{width:42px;height:24px;border-radius:12px;background:#d2d2d7;position:relative;cursor:pointer;flex-shrink:0;}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;}
+.sw.on{background:var(--brand);} .sw.on::after{left:20px;}
+.inp{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:14px;padding:10px 12px;margin-top:8px;}
+.inp input{flex:1;border:0;background:transparent;font-size:14.5px;font-weight:700;color:var(--ink);outline:none;}
+.sug{padding:10px 4px;border-bottom:1px solid #f0f0f2;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer;}
+.sug small{display:block;font-size:11px;color:var(--sub);font-weight:600;margin-top:2px;}
+.fav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:10px 0 2px;}
+.fav::-webkit-scrollbar{display:none;}
+.favc{flex:0 0 auto;background:var(--soft);border:1.5px solid #ffd3e0;border-radius:16px;padding:10px 12px;cursor:pointer;min-width:150px;}
+.favc b{display:block;font-size:14px;color:var(--ink);} .favc span{font-size:11px;color:var(--sub);}
+.favc.add{background:var(--bg);border:1.5px dashed #d2d2d7;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:700;min-width:70px;}
+.step{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f2;align-items:flex-start;cursor:pointer;}
+.step .ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:800;flex-shrink:0;}
+.step .t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.35;}
+.step .d{font-size:11px;color:var(--sub);margin-top:2px;}
+.step .act{margin-left:auto;font-size:11px;font-weight:800;color:var(--brand);white-space:nowrap;align-self:center;}
+.toast{position:absolute;left:50%;top:100px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:var(--pill);padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;}
+.voice{position:absolute;right:12px;bottom:210px;z-index:25;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;}
+.voice.on{background:var(--brand);}
+/* v6: 오프닝 스플래시 · 10초 카드 · 실시간 · 리포트 */
+.splash{position:absolute;inset:0;z-index:70;background:linear-gradient(180deg,#FFF0F5 0%,#fff 60%);display:flex;flex-direction:column;justify-content:center;padding:36px 28px;}
+.splash.hide{display:none;}
+.splash .logo{font-size:13px;font-weight:800;color:var(--brand);letter-spacing:.02em;margin-bottom:18px;}
+.splash h1{font-size:26px;line-height:1.3;font-weight:800;color:var(--ink);letter-spacing:-.03em;}
+.splash h1 em{font-style:normal;color:var(--brand);}
+.splash p{font-size:13.5px;color:var(--sub);line-height:1.6;margin-top:14px;}
+.big{display:flex;gap:10px;align-items:flex-end;margin:16px 0 6px;}
+.big .n{font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink);}
+.big .n.red{color:var(--red);} .big .n.green{color:#0A8A45;}
+.big small{font-size:12px;color:var(--sub);font-weight:700;margin-bottom:6px;}
+.gap{background:var(--soft);border-radius:14px;padding:12px 14px;margin-top:8px;font-size:14px;font-weight:800;color:var(--brand);}
+.src.small{font-size:9.5px;}
+.why{margin-top:10px;}
+.why .w{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f2;font-size:12.5px;color:var(--ink);}
+.why .w b{min-width:30px;font-size:11px;color:#fff;background:var(--ink);border-radius:6px;padding:2px 6px;text-align:center;}
+.live{display:inline-flex;align-items:center;gap:6px;background:#1F1F23;color:#fff;border-radius:var(--pill);padding:6px 11px;font-size:12px;font-weight:800;}
+.live .pd{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(237,40,49,.25);}
+.live.g .pd{background:var(--green);box-shadow:0 0 0 3px rgba(0,183,92,.25);}
+.rep{background:var(--bg);border-radius:14px;padding:12px;margin-top:10px;font-size:12.5px;line-height:1.6;color:var(--ink);}
+.rep h5{font-size:12px;color:var(--brand);margin-bottom:4px;}
+.note{width:350px;font-size:12.5px;line-height:1.65;color:#333;background:#fff;border-radius:16px;padding:18px;box-shadow:0 4px 20px rgba(0,0,0,.08);align-self:flex-start;}
+.note h3{font-size:14px;margin-bottom:6px;color:var(--ink);} .note h4{font-size:12.5px;margin:12px 0 4px;color:var(--brand);}
+.note ul{padding-left:16px;} .note li{margin:2px 0;}
+</style>
+</head>
+<body>
+<div class="phone">
+ <div id="map"></div>
+ <div class="statusbar"><span>2:41</span><span>●●● ᯤ 79</span></div>
+ <div class="toast" id="toast"></div>
+
+ <!-- v6 오프닝: 조준점 하나 -->
+ <div class="splash" id="splash">
+  <div class="logo">마중길</div>
+  <h1>노량진로 이 횡단보도,<br>초록불 <em>26초</em>.<br>초1 걸음으로는 <em>36초</em>.</h1>
+  <p>어른은 이 10초를 평생 모릅니다.<br>신호등은 어른 걸음으로 설계됐고,<br>초등학교 1학년은 그 도시를 혼자 건넙니다.</p>
+  <div class="big"><span class="n red">62<small style="font-size:16px">곳</small></span><small>동작구 신호등 중<br>아이 걸음으로 한 번에 못 건너는 곳</small></div>
+    <button class="btn p" onclick="document.getElementById('splash').classList.add('hide');show('sh-onb');say('마중길은 이 10초를 계산하는 지도입니다.')">마중길은 이 10초를 계산하는 지도입니다 →</button>
+  <div class="src" style="text-align:center">같은 엔진 · 다른 걸음속도(0.7 / 0.8 / 1.0) = 어르신·휠체어·유모차도 그대로</div>
+ </div>
+
+ <div class="top">
+  <div class="search" onclick="openSearch()"><span>🔍</span><span class="q" id="qtext">주소·장소 검색 (어디로 가요?)</span><span class="time" id="timechip">하교 14~18시</span></div>
+  <div class="layers">
+   <div class="fchip on" id="fWalk">🚶 보통 ▾</div>
+   <div class="fchip on" id="fSig">🚦 신호등만 ▾</div>
+   <div class="fchip" id="fNight">🌙 안심길 ▾</div>
+   <div class="fchip" id="fWheel">♿ 휠체어·유모차 ▾</div>
+  </div>
+ </div>
+ <div class="rstack">
+  <div class="rbtn" data-r="layer">건널목<br>보기</div>
+  <div class="rbtn on" data-r="poi">주변</div>
+  <div class="rbtn" data-r="analysis">분석</div>
+  <div class="rbtn" id="hideBtn">숨김</div>
+ </div>
+ <div class="pop hide" id="pop-poi">
+  <div class="pop-h">주변정보</div>
+  <div class="pop-i poi" data-p="bus">🚌 버스정류장</div>
+  <div class="pop-i poi on" data-p="school">🏫 학교</div>
+  <div class="pop-i poi" data-p="aca">📚 학원 · 🥋 도장</div>
+  <div class="pop-i poi" data-p="hosp">🏥 병원 (소아과·의원)</div>
+  <div class="pop-i poi" data-p="pharm">💊 약국</div>
+  <div class="pop-i poi" data-p="cctv">📹 CCTV</div>
+  <div class="pop-src">버스·병원·약국·CCTV = 실데이터(서울시·심평원·행안부). 학원은 NEIS 주소(지오코딩 예정).</div>
+ </div>
+ <div class="pop hide grid" id="pop-layer">
+  <div class="pop-h">건널목 보기</div>
+  <div class="gwrap" id="layers">
+   <div class="gi on" data-l="sig">🚦 신호등</div><div class="gi" data-l="green">⏱ 초록불</div><div class="gi" data-l="snd">🔊 음향신호기</div><div class="gi" data-l="brl">🟨 점자블록</div><div class="gi" data-l="low">♿ 보도턱</div><div class="gi" data-l="lit">💡 밝기</div><div class="gi" data-l="acc">⚠️ 사고다발</div><div class="gi" data-l="slope">⛰ 경사</div>
+  </div>
+ </div>
+ <div class="pop hide grid" id="pop-analysis">
+  <div class="pop-h">분석</div>
+  <div class="gwrap"><div class="gi" onclick="show('sh-report');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'))">🏫 학교별 통학로 리포트</div><div class="gi">⏰ 시간대별 사고</div><div class="gi">🌙 어두운 건널목</div><div class="gi">🚲 자전거 사고</div><div class="gi" title="성남시 API: 분당 횡단보도 37%가 우회전 사각지대 (분당 단계)">↪ 우회전 사각지대 (분당)</div><div class="gi" title="성남 옐로카펫 152 · 동작 16">🟨 옐로카펫 대기위치</div><div class="gi off">📈 위험도 추이(본선)</div><div class="gi">🚦 실시간 신호 (API 수신 중)</div></div>
+ </div>
+
+ <div class="legend" id="legend"></div>
+ <div class="voice" id="voiceBtn" title="음성 안내">🔊</div>
+ <div class="tbar"><span class="now" id="nowBtn">● 실시간</span><input type="range" id="tslider" min="8" max="20" step="0.5" value="14.5"><div class="clock"><span id="clock">14:30</span><small>하교 시간대</small></div></div>
+
+ <!-- v7 온보딩: 그늘로처럼 첫 실행에 장소·걸음 저장 -->
+ <div class="sheet hide" id="sh-onb">
+  <div class="grab"></div>
+  <div class="eyebrow">처음 한 번만 · 이 기기에 저장</div>
+  <h2>자주 가는 곳을 저장해요</h2>
+  <div class="sub">집·학교·학원을 별칭으로 저장하면 다음부터 한 번에 길을 찾아요. 로그인 없음 · 위치 저장 없음.</div>
+  <div class="inp" style="margin-top:12px"><span>🏫</span><input value="서울대림초등학교" readonly><span class="chip ok">학교</span></div>
+  <div class="inp"><span>🏠</span><input id="onbHome" placeholder="집 주소 (예: 여의대방로44길 39)" value="서울 동작구 여의대방로44길 39"><span class="chip ok">집</span></div>
+  <div class="inp"><span>🥋</span><input placeholder="학원·도장 (선택)" value="△△태권도장"><span class="chip">학원</span></div>
+  <div class="chips"><span class="chip">＋ 할머니집</span><span class="chip">＋ 돌봄교실</span><span class="chip">＋ 친구집</span></div>
+  <h4 style="font-size:14px;font-weight:800;margin-top:14px">🚶 걸음</h4>
+  <div class="seg" id="onbSpeed"><div data-v="1.0">뛸 수 있어요</div><div data-v="0.8" class="on">보통</div><div data-v="0.7">천천히 걸어요</div></div>
+  <div class="src">나중에 상단 🚶 칩에서 바꿀 수 있어요.</div>
+  <button class="btn p" onclick="finishOnb()">저장하고 시작하기</button>
+  <div class="src" style="text-align:center">보호자 알림은 나중에 켤 수 있어요</div>
+ </div>
+
+ <!-- 홈: 자주 가는 길 -->
+ <div class="sheet hide" id="sh-home">
+  <div class="grab"></div>
+  <div class="eyebrow">초1이 혼자 건너는 길 · 자주 가는 길</div>
+  <h2>어디로 갈까요?</h2>
+  <div class="fav">
+   <div class="favc" onclick="preview('home')"><b>🏫 대림초 → 🏠 집</b><span>720m · 건널목 3 · 보통 걸음</span></div>
+   <div class="favc" onclick="preview('dojang')"><b>🏫 대림초 → 🥋 태권도</b><span>430m · 건널목 2</span></div>
+   <div class="favc add">＋</div>
+  </div>
+  <div class="statrow"><div class="stat bad"><b id="cntNoSig"></b><span>신호 없는 건널목</span></div><div class="stat warn"><b id="cntShort"></b><span>내 걸음엔 짧은 신호</span></div><div class="stat"><b id="cntDark"></b><span>어두운 곳</span></div><div class="stat bad"><b id="cntAcc"></b><span>사고다발 100m</span></div></div>
+  <div class="src">공공데이터를 반영해요 · 대림초 반경 300m</div>
+ </div>
+
+ <!-- 주소 입력 (그늘로 메인 검색 문법: 출발·도착 + 저장 장소 칩 + 최근) -->
+ <div class="sheet hide" id="sh-search">
+  <div class="grab"></div>
+  <div class="eyebrow">길 찾기</div>
+  <h2>어디에서 어디로 가요?</h2>
+  <div class="inp"><span class="dot" style="background:var(--green)"></span><input id="inFrom" value="서울대림초등학교 (현재 위치)" readonly></div>
+  <div class="inp"><span class="dot" style="background:var(--brand)"></span><input id="inTo" placeholder="도착지 주소·장소 입력" oninput="searchSuggest(this.value)" autocomplete="off"></div>
+  <div class="chips"><span class="chip ok" onclick="pickDest('home')">🏠 집</span><span class="chip ok" onclick="pickDest('dojang')">🥋 태권도</span><span class="chip" onclick="pickDest('school')">🏫 학교</span><span class="chip" onclick="pickDest('gm')">👵 할머니집</span><span class="chip">＋ 장소 저장</span></div>
+  <div id="sugList"></div>
+  <div class="src">자주 가는 곳은 저장해두면 한 번에 찾아요.</div>
+ </div>
+
+ <!-- 길 미리보기 -->
+ <div class="sheet hide" id="sh-route">
+  <div class="grab"></div>
+  <div class="eyebrow" id="rEye">길 미리보기 · 🏫 대림초 → 🏠 집</div>
+  <h2 id="rTitle">오늘 이 길, 조심할 곳 <span id="rWarnN">3</span>곳</h2>
+  <div class="sub" id="rSub"></div>
+  <div class="statrow" id="rStats"></div>
+  <div id="rSteps"></div>
+  <div class="row2"><button class="btn s" onclick="backHome()">뒤로</button><button class="btn p" onclick="startWalk(false)">길 안내 시작</button></div>
+  <button class="btn o" onclick="shareGuardian()">👪 보호자에게 공유 (출발·도착 알림)</button>
+  <div class="src">위험한 곳은 돌아가게 하지 않아요 — 알려드리고, 우회는 원할 때만.</div>
+ </div>
+
+ <!-- 경고 카드 -->
+ <div class="sheet hide" id="sh-warn">
+  <div class="grab"></div>
+  <div class="eyebrow" id="wEye"></div>
+  <h2 id="wTitle"></h2>
+  <div class="sub" id="wSub"></div>
+  <div id="wBig"></div>
+  <div id="wLive"></div>
+  <div class="badges" id="wBadges"></div>
+  <div class="chips" id="wChips"></div>
+  <div class="why" id="wWhy"></div>
+  <div class="row2"><button class="btn s" onclick="show('sh-route');fitRoute()">‹ 뒤로</button><button class="btn s" onclick="show('sh-route');fitRoute()">알겠어요, 그냥 갈게요</button></div>
+  <button class="btn o" id="wDetour">이 구간만 우회</button>
+ </div>
+
+ <!-- v6 역방향 산출물: 학교 통학로 리포트 -->
+ <div class="sheet hide" id="sh-report">
+  <div class="grab"></div>
+  <div class="eyebrow">역방향 산출물 · 자동 생성 (LLM, 모두의 AI 실험실)</div>
+  <h2>서울대림초 통학로 안전 리포트</h2>
+  <div class="sub">2026-08-19 기준 · 공공데이터 자동 분석</div>
+  <div class="statrow"><div class="stat"><b>63</b><span>반경 300m 건널목</span></div><div class="stat bad"><b>48</b><span>신호등 없음 (76%)</span></div><div class="stat warn"><b id="repShort">2</b><span>아이 걸음엔 짧은 신호</span></div><div class="stat bad"><b>1</b><span>2024 스쿨존 사고다발</span></div></div>
+  <div class="rep"><h5>요약 (자동 문장)</h5>서울대림초 주변 건널목 63곳 중 48곳(76%)에 보행자 신호등이 없습니다. 2024년 스쿨존 어린이 사고다발지역(학교 북측, 사고 2건)이 반경 100m 안에 있고, 그 주변 건널목 11곳 중 9곳이 무신호입니다. 신호등이 있는 15곳 중 <b id="repShort2">2</b>곳은 아이 걸음으로 한 번에 건널 수 없습니다.</div>
+  <div class="rep"><h5>개선 제안 초안 (지자체·경찰서용)</h5>① 보라매로 6차로 건널목(녹색 28초 → 필요 31초) 보행신호 3초 연장 검토 ② 대방동1길 무신호 건널목 4곳 중 사고다발 인접 2곳 보행자작동신호기 설치 검토 ③ 반경 300m 보안등 없는 건널목 4곳 조도 보강</div>
+  <div class="rep"><h5>배포</h5>학부모회 · 학교 · 동작구청 교통행정과 · 동작경찰서 — PDF 1장, 매월 자동 갱신</div>
+  <div class="row2"><button class="btn s" onclick="show('sh-home')">닫기</button><button class="btn p" onclick="toast('PDF 내보내기 (목업)')">PDF로 내보내기</button></div>
+  
+ </div>
+
+ <!-- 걷기 설정 -->
+ <div class="sheet hide pref" id="sh-pref">
+  <div class="grab"></div>
+  <div class="eyebrow">내 걷기 설정</div>
+  <h2>어떤 길이 편하세요?</h2>
+  <h4>🚶 걸음</h4>
+  <div class="seg" id="segSpeed"><div data-v="1.0">뛸 수 있어요</div><div data-v="0.8" class="on">보통</div><div data-v="0.7">천천히 걸어요</div></div>
+  <div class="src">내 걸음에 맞춰 초록불 시간을 계산해요.</div>
+  <h4>🚦 건널목</h4>
+  <div class="seg"><div class="on">신호등만</div><div>균형</div><div>상관없어요</div></div>
+  
+  <h4>💡 밝기</h4>
+  <div class="seg"><div>밝은 길</div><div class="on">균형</div><div>상관없어요</div></div>
+  <div class="src">해가 지면 자동으로 "밝은 길"이 돼요.</div>
+  <div class="tg">🔊 음향·점자 있는 건널목 우선<div class="sw" onclick="this.classList.toggle('on')"></div></div>
+  <div class="tg">♿ 휠체어·유모차 (턱·경사)<div class="sw" id="swWheel" onclick="this.classList.toggle('on');toggleWheel()"></div></div>
+  <div class="tg">⚠️ 사고다발 알려주기<div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+  <div class="tg">🚲 자전거·킥보드로 가요<div class="sw" onclick="this.classList.toggle('on')"></div></div>
+  <div class="tg">🌙 안심길 (밤엔 큰길·CCTV)<div class="sw" id="swNight" onclick="this.classList.toggle('on');toggleNight()"></div></div>
+  <div class="tg">🔊 음성 안내 (무료 기본 음성)<div class="sw on" id="swVoice" onclick="this.classList.toggle('on')"></div></div>
+  <button class="btn p" onclick="show('sh-home')">이 기기에 설정 저장</button>
+  <div class="src" style="text-align:center">로그인 없이 이 기기에만 저장돼요</div>
+ </div>
+
+ <!-- 따라가기 -->
+ <div class="sheet hide" id="sh-follow">
+  <div class="grab"></div>
+  <div class="eyebrow" id="fEye"></div>
+  <h2 id="fTitle"></h2>
+  <div class="sub" id="fSub"></div>
+  <div class="chips" id="fChips"></div>
+  <div class="statrow"><div class="stat"><b id="fLeft">3</b><span>남은 건널목</span></div><div class="stat"><b id="fMin">9분</b><span>남은 시간</span></div><div class="stat ok"><b>🚌 3분</b><span>대림초입구 도착(실시간)</span></div></div>
+  <div class="row2"><button class="btn s" onclick="show('sh-route')">경로 보기</button><button class="btn p" onclick="nextStep()">다음 →</button></div>
+ </div>
+
+ <!-- 건널목 카드 (보기 모드) -->
+ <div class="sheet hide" id="sh-card">
+  <div class="grab"></div>
+  <div class="eyebrow" id="cRoad"></div>
+  <h2 id="cTitle"></h2>
+  <div class="sub" id="cSub"></div>
+  <div class="badges" id="cBadges"></div>
+  <div class="chips" id="cJudge"></div>
+  <button class="btn s" onclick="closeCard()">닫기</button>
+ </div>
+</div>
+
+<div class="note">
+ <h3>마중길 액션 목업 v6 — 본선행 배점 전략 반영</h3>
+ <b>조준 하나</b>: "대한민국 신호등은 어른 걸음(1.0m/s)으로 설계됐다. 초1은 그 도시를 혼자 건넌다." 나머지 대상은 <b>같은 엔진·다른 걸음속도 파라미터</b> 한 줄.
+ <h4>① 문제정의 30 — 오프닝 스플래시</h4>
+ <ul><li>노량진로 129: 초록 26초 vs 초1 36초(실측) → 동작구 62곳(편람 공식 재계산)</li><li>대림초: 2024 스쿨존 사고다발, 63곳 중 48 무신호</li></ul>
+ <h4>② AI 25 — 구조로 증명</h4>
+ <ul><li>경고 카드 "왜 위험한가": 위험도 엔진 <b>기여 요인 top3</b>(설명가능성, 전국 58,831 노드 × 사고다발 12,780 라벨)</li><li>초록불 계산은 <b>결정론(편람 공식)</b>이라고 정직하게 표기 — 계산은 계산, 학습은 학습</li><li>리포트 문장 = 모두의AI실험실 LLM</li></ul>
+ <h4>③ 구체성 30 — 이미 돌아감</h4>
+ <ul><li>건널목 104 · CCTV 77 · 버스 40 · 병원 68 · 약국 20 · 표고 = 실데이터</li><li><b>실시간 신호 API(행안부 15157604) 수신 확인</b> — 카드·따라가기에 점등상태+잔여초 (목업은 로컬 카운트다운; 서울 값은 현재 스냅샷 단계라고 기획서에 정직 표기)</li></ul>
+ <h4>④ 기대효과 15 — 역방향 산출물</h4>
+ <ul><li>[분석] → <b>학교별 통학로 리포트</b> (자동 문장 + 지자체 개선 제안 초안 + 배포처)</li><li>아이 폰 비로그인 · 좌표 미저장 · 이벤트 3종</li></ul>
+ <h4>발표 데모 순서</h4>
+ <ol style="padding-left:16px"><li>스플래시(10초) → 2. 홈 "대림초→집" 탭 → 3. 짧은 신호 핀 탭(26 vs 31초·실시간·기여요인) → 4. [이 구간만 우회] → 5. [길 안내] · [보호자 공유] → 6. [분석] 통학로 리포트</li></ol>
+</div>
+
+<script>
+const CW=[
+{lat:37.50211438,lng:126.9275427,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동길"},
+{lat:37.50290983,lng:126.9264192,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:0,rd:"대방동길"},
+{lat:37.50269486,lng:126.9260146,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동길"},
+{lat:37.49996051,lng:126.928376,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:1,g:30,lit:1,acc:0,rd:"상도로"},
+{lat:37.49936382,lng:126.9287454,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:0,acc:0,rd:"상도로"},
+{lat:37.49984264,lng:126.9292296,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:0,rd:"상도로"},
+{lat:37.50037259,lng:126.9265486,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:3,acc:1,rd:"대방동1길"},
+{lat:37.50061445,lng:126.9248833,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:8,acc:1,rd:"대방동1길"},
+{lat:37.50023426,lng:126.9249447,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:4,acc:1,rd:"대방동1길"},
+{lat:37.50042013,lng:126.9242261,sig:"N",snd:"N",brl:"Y",low:"N",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동1길"},
+{lat:37.50190126,lng:126.922363,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동1길"},
+{lat:37.50043115,lng:126.9246808,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:7,acc:1,rd:"대방동7길"},
+{lat:37.50262469,lng:126.9263227,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동9길"},
+{lat:37.50026166,lng:126.9239617,sig:"N",snd:"N",brl:"N",low:"N",hi:"Y",lanes:1,g:0,lit:2,acc:0,rd:"대방동27길"},
+{lat:37.5018865,lng:126.9246484,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:7,acc:0,rd:"대방동15길"},
+{lat:37.50282023,lng:126.9252882,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동15길"},
+{lat:37.50294068,lng:126.9240661,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:7,acc:0,rd:"대방동15길"},
+{lat:37.50294928,lng:126.9242667,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:6,acc:0,rd:"대방동15길"},
+{lat:37.50394667,lng:126.9240932,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:6,acc:0,rd:"대방동23길"},
+{lat:37.50412148,lng:126.9241021,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:6,acc:0,rd:"대방동23길"},
+{lat:37.50394667,lng:126.9240932,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:6,acc:0,rd:"대방동23길"},
+{lat:37.50413142,lng:126.9252945,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동23길"},
+{lat:37.50270683,lng:126.9255107,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동길"},
+{lat:37.50356363,lng:126.9253368,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동길"},
+{lat:37.50360639,lng:126.9253423,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동길"},
+{lat:37.50399161,lng:126.9252239,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:6,acc:0,rd:"대방동길"},
+{lat:37.49907569,lng:126.9274499,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49762314,lng:126.9220173,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:3,acc:0,rd:"여의대방로22길"},
+{lat:37.4976575,lng:126.9221628,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"여의대방로22길"},
+{lat:37.50028389,lng:126.9252086,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:1,rd:"상도로"},
+{lat:37.50002127,lng:126.9242518,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:22,lit:2,acc:0,rd:"상도로"},
+{lat:37.499799,lng:126.9208268,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:1,rd:"상도로"},
+{lat:37.50031185,lng:126.9212173,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:1,acc:1,rd:"상도로"},
+{lat:37.49977301,lng:126.922318,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:0,rd:"상도로"},
+{lat:37.49770626,lng:126.9242937,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:7,acc:0,rd:"여의대방로22길"},
+{lat:37.49803877,lng:126.9266113,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:0,rd:"여의대방로22길"},
+{lat:37.49836392,lng:126.9241399,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49891313,lng:126.9251726,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:24,lit:5,acc:0,rd:"여의대방로24길"},
+{lat:37.4985308,lng:126.9260495,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:0,acc:0,rd:"여의대방로24길"},
+{lat:37.49893011,lng:126.9251894,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:5,acc:0,rd:"여의대방로24길"},
+{lat:37.49930467,lng:126.926335,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:3,acc:0,rd:"여의대방로24길"},
+{lat:37.49930467,lng:126.926335,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:17,lit:3,acc:0,rd:"여의대방로24길"},
+{lat:37.49894549,lng:126.9283248,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:2,acc:0,rd:"보라매로"},
+{lat:37.49946331,lng:126.9278966,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:6,g:28,lit:1,acc:0,rd:"보라매로"},
+{lat:37.49964623,lng:126.9239474,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:4,g:32,lit:4,acc:0,rd:"상도로"},
+{lat:37.49958874,lng:126.9251614,sig:"Y",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:23,lit:3,acc:1,rd:"상도로"},
+{lat:37.49999501,lng:126.9254318,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:4,g:32,lit:3,acc:1,rd:"상도로"},
+{lat:37.49997455,lng:126.9279169,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:5,g:30,lit:2,acc:0,rd:"상도로"},
+{lat:37.49996051,lng:126.928376,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:5,g:25,lit:1,acc:0,rd:"상도로"},
+{lat:37.49995131,lng:126.9295592,sig:"Y",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:5,g:25,lit:4,acc:0,rd:"상도로"},
+{lat:37.50228975,lng:126.9270552,sig:"N",snd:"N",brl:"N",low:"N",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동7길"},
+{lat:37.49875568,lng:126.9205961,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:4,g:34,lit:2,acc:0,rd:"여의대방로"},
+{lat:37.49921172,lng:126.9206881,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:1,rd:"여의대방로"},
+{lat:37.49947036,lng:126.920624,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:1,rd:"여의대방로"},
+{lat:37.5001905,lng:126.9205631,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:5,g:31,lit:1,acc:1,rd:"여의대방로"},
+{lat:37.50279063,lng:126.9233466,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:7,g:44,lit:3,acc:0,rd:"여의대방로"},
+{lat:37.50303719,lng:126.9217338,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:0,rd:"여의대방로"},
+{lat:37.49821404,lng:126.9212252,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:5,acc:0,rd:"여의대방로24길"},
+{lat:37.49788504,lng:126.9218261,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:0,acc:0,rd:"여의대방로24길"},
+{lat:37.49796742,lng:126.9222993,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49796872,lng:126.9222993,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49803965,lng:126.922629,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:3,acc:0,rd:"여의대방로24길"},
+{lat:37.49825826,lng:126.9239913,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49857096,lng:126.9241657,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:4,acc:0,rd:"여의대방로24길"},
+{lat:37.49901236,lng:126.9254411,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:22,lit:3,acc:0,rd:"여의대방로24길"},
+{lat:37.49936561,lng:126.9268253,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:24,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49791931,lng:126.9245212,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:5,acc:0,rd:"여의대방로22길"},
+{lat:37.49784264,lng:126.925606,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로22길"},
+{lat:37.50017633,lng:126.927885,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:1,g:0,lit:5,acc:0,rd:"대방동길"},
+{lat:37.50017633,lng:126.9278442,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동길"},
+{lat:37.50075452,lng:126.9272772,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동길"},
+{lat:37.50077234,lng:126.9275004,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:0,rd:"대방동길"},
+{lat:37.50111398,lng:126.9274916,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:6,acc:0,rd:"대방동길"},
+{lat:37.50161475,lng:126.927952,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동길"},
+{lat:37.50201994,lng:126.9280822,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동6길"},
+{lat:37.50203507,lng:126.9280822,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"대방동6길"},
+{lat:37.50370277,lng:126.9220128,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:5,g:32,lit:2,acc:0,rd:"여의대방로"},
+{lat:37.50007456,lng:126.9226379,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:0,rd:"상도로"},
+{lat:37.50007456,lng:126.9226723,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:4,g:32,lit:2,acc:0,rd:"상도로"},
+{lat:37.49961665,lng:126.9242845,sig:"Y",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:22,lit:2,acc:0,rd:"상도로"},
+{lat:37.49991898,lng:126.9254578,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:0,acc:1,rd:"상도로"},
+{lat:37.4995662,lng:126.9268688,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:1,rd:"상도로"},
+{lat:37.49990403,lng:126.9265216,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:1,acc:1,rd:"상도로"},
+{lat:37.49991005,lng:126.9204894,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:7,g:40,lit:0,acc:1,rd:"상도로"},
+{lat:37.49995416,lng:126.9204894,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:5,g:35,lit:0,acc:1,rd:"상도로"},
+{lat:37.4975333,lng:126.9276673,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:1,g:0,lit:1,acc:0,rd:"보라매로"},
+{lat:37.49808946,lng:126.9283545,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:8,acc:0,rd:"보라매로"},
+{lat:37.49841377,lng:126.9283123,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:6,g:27,lit:3,acc:0,rd:"보라매로"},
+{lat:37.49793187,lng:126.9279051,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:27,lit:1,acc:0,rd:"보라매로"},
+{lat:37.49899262,lng:126.9278213,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:0,rd:"보라매로"},
+{lat:37.4991825,lng:126.9279512,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:3,acc:0,rd:"보라매로"},
+{lat:37.49943546,lng:126.9264924,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:1,rd:"여의대방로24다길"},
+{lat:37.49767125,lng:126.9225896,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"Y",lanes:2,g:0,lit:2,acc:0,rd:"여의대방로22길"},
+{lat:37.49775248,lng:126.9240781,sig:"N",snd:"N",brl:"Y",low:"N",hi:"N",lanes:2,g:0,lit:1,acc:0,rd:"여의대방로22길"},
+{lat:37.49815136,lng:126.9271689,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"여의대방로22길"},
+{lat:37.50286984,lng:126.9252882,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동15길"},
+{lat:37.49840138,lng:126.9207199,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:4,acc:0,rd:"여의대방로24길"},
+{lat:37.49807151,lng:126.9229744,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:2,acc:0,rd:"여의대방로24길"},
+{lat:37.49861431,lng:126.9244355,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:3,acc:0,rd:"여의대방로24길"},
+{lat:37.49832325,lng:126.9276327,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:3,g:0,lit:0,acc:0,rd:"여의대방로22길"},
+{lat:37.49845872,lng:126.924544,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:1,g:0,lit:0,acc:0,rd:"여의대방로24길"},
+{lat:37.50037919,lng:126.9279133,sig:"N",snd:"N",brl:"N",low:"Y",hi:"N",lanes:1,g:0,lit:5,acc:0,rd:"대방동길"},
+{lat:37.49855825,lng:126.9260495,sig:"N",snd:"N",brl:"Y",low:"Y",hi:"N",lanes:2,g:0,lit:0,acc:0,rd:"여의대방로22길"},
+{lat:37.49842012,lng:126.9205327,sig:"Y",snd:"Y",brl:"Y",low:"Y",hi:"N",lanes:2,g:40,lit:3,acc:0,rd:"여의대방로"}
+];
+
+const HOSP=[[37.4994798,126.9279165,"가족사랑서울정신건강의학과의원","의원"],[37.4994861,126.9297253,"경해가정의원","의원"],[37.5000475,126.9307122,"김석호내과의원","내과"],[37.4999844,126.9279174,"다엘소아청소년과의원","소아과"],[37.4995615,126.9271531,"동작유외과의원","의원"],[37.4996579,126.9309795,"라이프비뇨의학과의원","의원"],[37.4996579,126.9309795,"맑은세상이비인후과의원","이비인후과"],[37.4994798,126.9279165,"미즈여성의원","의원"],[37.4999427,126.9317763,"박이비인후과의원","이비인후과"],[37.4999844,126.9279174,"반마취통증의학과의원","의원"],[37.4999427,126.9317763,"배소아청소년과의원","소아과"],[37.4999695,126.9283927,"봄정신건강의학과의원","의원"],[37.4995205,126.9299868,"삼성유신경외과의원","의원"],[37.4975038,126.9208075,"삼육오보람의원","의원"],[37.4999844,126.9279174,"소리숨이비인후과의원","이비인후과"],[37.4999844,126.9279174,"신항장외과의원","의원"],[37.5003592,126.9311599,"양석원내과의원","내과"],[37.5000866,126.9220559,"연세광정신건강의학과의원","의원"],[37.4979982,126.9274101,"연세에이스정형외과의원","정형외과"],[37.5006158,126.9318129,"연세재활의학과의원","의원"],[37.4995887,126.9268523,"연세큐원피부과의원","피부과"],[37.4990887,126.9287743,"예담신경외과의원","의원"],[37.4979987,126.9274798,"예일성모내과의원","내과"],[37.4990895,126.9284473,"우성용 1 내과의원","내과"],[37.4994446,126.9302495,"유광수내과의원","내과"],[37.5042286,126.9223915,"이내과의원","내과"],[37.4995615,126.9271531,"자라미소아청소년과의원","소아과"],[37.4999844,126.9279174,"제이스타피부과의원","피부과"],[37.4999695,126.9283927,"조은내과의원","내과"],[37.4996579,126.9309795,"중앙탑정형외과의원","정형외과"],[37.4999427,126.9317763,"진비뇨기과의원","의원"],[37.4996579,126.9309795,"참고은의원","의원"],[37.4994798,126.9279165,"코사랑이비인후과의원","이비인후과"],[37.4999844,126.9279174,"파랑새정신건강의학과의원","의원"],[37.4994798,126.9279165,"하정한정형외과의원","정형외과"],[37.4978039,126.9218431,"한사랑의원","의원"],[37.4994798,126.9279165,"호호안과의원","안과"],[37.4999427,126.9317763,"권택견치과의원","치과"],[37.4988406,126.9284251,"그린필치과의원","치과"],[37.4976192,126.9221897,"나노라이너치과교정과치과의원","치과"],[37.4997696,126.9311611,"라움치과의원","치과"],[37.4994798,126.9279165,"서울미치과의원","치과"],[37.4995505,126.9293885,"서울민플러스치과의원","치과"],[37.5000866,126.9220559,"서울봄날치과교정과치과의원","치과"],[37.5003036,126.9312819,"서울정＆오치과의원","치과"],[37.4984461,126.9283238,"연세w치과의원","치과"],[37.4994741,126.9299439,"연세바탕치과의원","치과"],[37.4999695,126.9283927,"연세스마트치과의원","치과"],[37.4990887,126.9287743,"우리들강치과의원","치과"],[37.4990887,126.9287743,"우리들치과의원","치과"],[37.4996579,126.9309795,"이경수서울치과의원","치과"],[37.4990402,126.9207254,"이웰치과의원","치과"],[37.4999844,126.9279174,"정영복치과의원","치과"],[37.4988584,126.9206891,"보라매자생한방병원","한방병원"],[37.4999695,126.9283927,"경희다원한의원","한의원"],[37.5003592,126.9311599,"경희오순도순한의원","한의원"],[37.4999073,126.9292454,"고운비체한의원","한의원"],[37.4981863,126.9277698,"금강한의원","한의원"],[37.4994798,126.9279165,"다담한의원","한의원"],[37.4981755,126.9294706,"동산한의원","한의원"],[37.4990895,126.9284473,"동작한의원","한의원"],[37.4992927,126.9309863,"명한의원","한의원"],[37.4999427,126.9317763,"민생한의원","한의원"],[37.4991061,126.9309885,"성대한의원","한의원"],[37.4983978,126.9289738,"원광맥한의원","한의원"],[37.4997696,126.9311611,"주작나무한의원","한의원"],[37.4990887,126.9287743,"청솔한의원","한의원"],[37.4994861,126.9297253,"해통백세한의원","한의원"]];
+const PHARM=[[37.4990895,126.9284473,"민들레약국"],[37.4995887,126.9268523,"세화약국"],[37.4999073,126.9292454,"메디칼신대방약국"],[37.4977822,126.9277226,"보라매온누리약국"],[37.4995615,126.9271531,"두더지약국"],[37.4994446,126.9302495,"솔약국"],[37.4991239,126.9303805,"미소약국"],[37.5042286,126.9223915,"고은온누리약국"],[37.4999695,126.9283927,"새천년약국"],[37.4996579,126.9309795,"성대천사약국"],[37.4994798,126.9279165,"메디칼수정약국"],[37.5003757,126.9314081,"희경약국"],[37.4994861,126.9297253,"다솜약국"],[37.4984317,126.9210372,"소화약국"],[37.4978039,126.9218431,"하나약국"],[37.4975038,126.9208075,"유정온누리약국"],[37.4999427,126.9317763,"대우당약국"],[37.4999844,126.9279174,"윤경약국"],[37.5000475,126.9307122,"늘사랑약국"],[37.5041841,126.9225488,"제일약국"]];
+const BUS=[[37.4989718729,126.9202813984,"보라매역.동작세무서"],[37.5043933307,126.9219621952,"서울지방병무청"],[37.5023841407,126.9210085488,"대방초등학교"],[37.498862,126.919402,"대방천사거리.동작세무서"],[37.4984887613,126.9197990982,"대방천사거리"],[37.4998464533,126.9193169475,"보라매역4번출구"],[37.500051,126.91905,"보라매역5번출구"],[37.4981412047,126.9201964462,"보라매역.동작세무서"],[37.5037895503,126.9218983526,"강남중학교"],[37.4997751387,126.9223387688,"서울공업고등학교"],[37.500012,126.921643,"서울공업고등학교"],[37.4996077724,126.9264810316,"대림초등학교"],[37.4998553553,126.926127913,"대림초등학교"],[37.50007,126.930872,"성대시장"],[37.5002832355,126.9317049239,"성대시장"],[37.4977748671,126.9278411369,"신대방삼거리"],[37.4983305124,126.9282547192,"신대방삼거리"],[37.50279,126.926694,"효주파크빌"],[37.4999673048,126.9281819736,"신대방삼거리역"],[37.5020677375,126.9278709369,"강현중학교"],[37.503123,126.925483,"대방어린이도서관"],[37.504676,126.925278,"성남중고"],[37.4991727218,126.9312735142,"상도3동주민센터"],[37.4978176529,126.9300612128,"하손초장교회"],[37.4989658209,126.928418089,"7호선신대방삼거리역2번출구.국민은행"],[37.4998232995,126.9267443461,"7호선신대방삼거리역4번출구"],[37.4991700746,126.9240090902,"코오롱하늘채아파트"],[37.5039638554,126.9224942472,"예스플러스"],[37.5039714206,126.9230394173,"대방교회"],[37.5039451009,126.9241422416,"대방동주택가.홈타운아파트"],[37.502975,126.924153,"강남중학교앞"],[37.500061271,126.9240183662,"범한택시"],[37.4977191463,126.9231862171,"보라매어린이집.문창중학교"],[37.4977295307,126.9245070504,"동작우체국"],[37.4982254734,126.9279311823,"신대방삼거리역.성대시장"],[37.4988284774,126.9285171719,"7호선신대방삼거리역2번출구.국민은행"],[37.4977131036,126.9300251189,"하손초장교회"],[37.4995035166,126.9298933823,"상도3동주민센터"],[37.4992308508,126.9201906523,"보라매역.동작세무서"],[37.4979925451,126.920229403,"보라매역.동작세무서"]];
+const CCTV=[[37.50023879,126.9253645],[37.49883368,126.9254321],[37.49910658,126.9272563],[37.49800073,126.925792],[37.497801,126.924036],[37.49996253,126.9312737],[37.500643,126.930222],[37.50192277,126.9289879],[37.4974758,126.9290366],[37.500281,126.924468],[37.498186,126.929257],[37.49837669,126.9298622],[37.49971848,126.9224421],[37.49953004,126.9279819],[37.501278,126.929692],[37.50160716,126.9284491],[37.50001483,126.9309268],[37.49772797,126.9277962],[37.49977868,126.9294476],[37.49960069,126.9278253],[37.49979237,126.9284288],[37.49945613,126.9283223],[37.49954083,126.9293648],[37.50029678,126.9318091],[37.50038427,126.9316048],[37.50275405,126.9267479],[37.50496617,126.9248076],[37.49901057,126.925216],[37.49917513,126.9311998],[37.50048487,126.931171],[37.5032629,126.9293932],[37.50284332,126.9302919],[37.49714696,126.926793],[37.49763034,126.9237914],[37.49628,126.923564],[37.49762072,126.9222121],[37.50063042,126.92934],[37.50396527,126.9241364],[37.50406133,126.9225579],[37.49879,126.924367],[37.49843248,126.9209402],[37.50264242,126.929227],[37.50073462,126.9303162],[37.49770175,126.9258276],[37.49730165,126.9268248],[37.49678398,126.9212251],[37.50211387,126.9264356],[37.502696,126.927738],[37.49846566,126.9224069],[37.49710616,126.9284702],[37.49615444,126.9257732],[37.500276,126.9277248],[37.49778741,126.9270619],[37.49843556,126.9243048],[37.498183,126.921951],[37.50207052,126.9276721],[37.49891508,126.928336],[37.49994925,126.9305443],[37.50098694,126.9274816],[37.49920434,126.9237156],[37.499398,126.929952],[37.4968717,126.9230988],[37.50278766,126.9226918],[37.500313,126.925295],[37.50126526,126.9253603],[37.502094,126.927893],[37.49776,126.930216],[37.50476831,126.9233313],[37.499211,126.926572],[37.49926592,126.9208423],[37.5035645,126.9247991],[37.4981409,126.9287628],[37.49700275,126.9220977],[37.500201,126.926682],[37.49669453,126.9223318],[37.4988291,126.9224911],[37.49687109,126.9242281]];
+const ELEV=[[37.50211438,126.9275427,46.0],[37.50290983,126.9264192,30.0],[37.50269486,126.9260146,30.0],[37.49996051,126.928376,29.0],[37.49936382,126.9287454,29.0],[37.49984264,126.9292296,31.0],[37.50037259,126.9265486,28.0],[37.50061445,126.9248833,25.0],[37.50023426,126.9249447,25.0],[37.50042013,126.9242261,25.0],[37.50190126,126.922363,27.0],[37.50043115,126.9246808,25.0],[37.50262469,126.9263227,30.0],[37.50026166,126.9239617,24.0],[37.5018865,126.9246484,29.0],[37.50282023,126.9252882,30.0],[37.50294068,126.9240661,34.0],[37.50294928,126.9242667,31.0],[37.50394667,126.9240932,37.0],[37.50412148,126.9241021,37.0],[37.50394667,126.9240932,37.0],[37.50413142,126.9252945,32.0],[37.50270683,126.9255107,30.0],[37.50356363,126.9253368,32.0],[37.50360639,126.9253423,32.0],[37.50399161,126.9252239,32.0],[37.49907569,126.9274499,25.0],[37.49762314,126.9220173,24.0],[37.4976575,126.9221628,24.0],[37.50028389,126.9252086,27.0],[37.50002127,126.9242518,25.0],[37.499799,126.9208268,21.0],[37.50031185,126.9212173,20.0],[37.49977301,126.922318,19.0],[37.49770626,126.9242937,24.0],[37.49803877,126.9266113,24.0],[37.49836392,126.9241399,22.0],[37.49891313,126.9251726,25.0],[37.4985308,126.9260495,25.0],[37.49893011,126.9251894,25.0],[37.49930467,126.926335,24.0],[37.49930467,126.926335,24.0],[37.49894549,126.9283248,27.0],[37.49946331,126.9278966,25.0],[37.49964623,126.9239474,22.0],[37.49958874,126.9251614,25.0],[37.49999501,126.9254318,27.0],[37.49997455,126.9279169,25.0],[37.49996051,126.928376,29.0],[37.49995131,126.9295592,31.0],[37.50228975,126.9270552,40.0],[37.49875568,126.9205961,23.0],[37.49921172,126.9206881,20.0],[37.49947036,126.920624,20.0],[37.5001905,126.9205631,21.0],[37.50279063,126.9233466,34.0],[37.50303719,126.9217338,26.0],[37.49821404,126.9212252,23.0],[37.49788504,126.9218261,24.0],[37.49796742,126.9222993,24.0],[37.49796872,126.9222993,24.0],[37.49803965,126.922629,23.0],[37.49825826,126.9239913,23.0],[37.49857096,126.9241657,23.0],[37.49901236,126.9254411,25.0],[37.49936561,126.9268253,24.0],[37.49791931,126.9245212,24.0],[37.49784264,126.925606,25.0],[37.50017633,126.927885,34.0],[37.50017633,126.9278442,34.0],[37.50075452,126.9272772,28.0],[37.50077234,126.9275004,34.0],[37.50111398,126.9274916,36.0],[37.50161475,126.927952,36.0],[37.50201994,126.9280822,46.0],[37.50203507,126.9280822,46.0],[37.50370277,126.9220128,27.0],[37.50007456,126.9226379,20.0],[37.50007456,126.9226723,20.0],[37.49961665,126.9242845,24.0],[37.49991898,126.9254578,25.0],[37.4995662,126.9268688,24.0],[37.49990403,126.9265216,24.0],[37.49991005,126.9204894,20.0],[37.49995416,126.9204894,20.0],[37.4975333,126.9276673,26.0],[37.49808946,126.9283545,28.0],[37.49841377,126.9283123,27.0],[37.49793187,126.9279051,26.0],[37.49899262,126.9278213,27.0],[37.4991825,126.9279512,25.0],[37.49943546,126.9264924,24.0],[37.49767125,126.9225896,23.0],[37.49775248,126.9240781,23.0],[37.49815136,126.9271689,25.0],[37.50286984,126.9252882,30.0],[37.49840138,126.9207199,23.0],[37.49807151,126.9229744,23.0],[37.49861431,126.9244355,23.0],[37.49832325,126.9276327,26.0],[37.49845872,126.924544,23.0],[37.50037919,126.9279133,34.0],[37.49855825,126.9260495,25.0],[37.49842012,126.9205327,23.0],[37.50061292,126.9248853,25.0]];
+
+const SCHOOL={lat:37.50061292,lng:126.9248853};
+const HOME={lat:37.50290983,lng:126.9290000};
+const DOJANG={lat:37.49930467,lng:126.926335};
+const ACC=[{lat:37.500166,lng:126.925842,y:2024,t:"스쿨존어린이",n:2},{lat:37.500081,lng:126.920412,y:2024,t:"자전거",n:5}];
+const WALKNM={1:"뛸 수 있어요",0.8:"보통",0.7:"천천히 걸어요"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=true, layerOn=false;
+const poiOn={school:true};
+const need=c=>Math.round(7+(c.lanes*3.25)/speed);
+const short=c=>c.sig==="Y"&&c.g>0&&c.g<need(c);
+const dark=c=>c.lit===0;
+const isNight=()=>hour>=18.5;
+function dist(a,b){const dx=(b.lng-a.lng)*88500*Math.cos(a.lat*Math.PI/180),dy=(b.lat-a.lat)*111000;return Math.hypot(dx,dy);}
+function elevAt(lat,lng){let best=null,bd=1e9;ELEV.forEach(e=>{const d=dist({lat:e[0],lng:e[1]},{lat,lng});if(d<bd){bd=d;best=e[2]}});return best;}
+function say(t){if(!voiceOn||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u);}
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600);}
+
+const map=L.map('map',{zoomControl:false}).setView([37.5008,126.9262],17);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'© OSM © CARTO · 공공데이터포털 표준데이터·경찰청·행안부·심평원·서울시',maxZoom:19}).addTo(map);
+L.circle([SCHOOL.lat,SCHOOL.lng],{radius:300,color:'#FF5C8A',weight:1.5,dashArray:'4 4',fillColor:'#FF5C8A',fillOpacity:.05}).addTo(map);
+ACC.forEach(a=>L.circle([a.lat,a.lng],{radius:60,color:'#ED2831',weight:2,fillColor:'#ED2831',fillOpacity:.12}).addTo(map).bindTooltip(a.y+' '+a.t+' 사고다발 · '+a.n+'건'));
+const ico=(html,z)=>({icon:L.divIcon({className:'',html:html,iconSize:[0,0]}),zIndexOffset:z||0});
+L.marker([SCHOOL.lat,SCHOOL.lng],ico('<div class="mk school"><div class="bub">🏫 대림초<small>어린이보호구역</small></div><div class="tail"></div></div>',1000)).addTo(map);
+L.marker([HOME.lat,HOME.lng],ico('<div class="mk home"><div class="bub">🏠 집</div><div class="tail"></div></div>',900)).addTo(map);
+L.marker([DOJANG.lat,DOJANG.lng],ico('<div class="mk home"><div class="bub">🥋 태권도</div><div class="tail"></div></div>',900)).addTo(map);
+
+/* POI layers (실데이터) */
+const POI={bus:BUS.map(b=>[b[0],b[1],'🚌 '+b[2]]),hosp:HOSP.map(h=>[h[0],h[1],'🏥 '+h[2].slice(0,10)+'<small>'+h[3]+'</small>']),pharm:PHARM.map(p=>[p[0],p[1],'💊 '+p[2]]),cctv:CCTV.map(c=>[c[0],c[1],'📹']),school:[[SCHOOL.lat,SCHOOL.lng,'🏫 서울대림초']],aca:[[37.5002,126.9278,'📚 ○○수학 (예시)'],[37.4998,126.9262,'🥋 △△태권도 (예시)']]};
+const poiLayers={};Object.keys(POI).forEach(k=>{poiLayers[k]=L.layerGroup(POI[k].map(p=>L.marker([p[0],p[1]],ico('<div class="mk poi"><div class="bub">'+p[2]+'</div><div class="tail"></div></div>',50)).on('click',()=>{if(k==='hosp'||k==='pharm'){toast('[여기까지 안전하게] → 현재 걷기 설정으로 길 찾기');}})));});
+function renderPOI(){Object.keys(POI).forEach(k=>{if(poiOn[k]&&!hidden)poiLayers[k].addTo(map);else poiLayers[k].remove();});}
+document.querySelectorAll('#pop-poi .poi').forEach(el=>el.onclick=()=>{const k=el.dataset.p;poiOn[k]=!poiOn[k];el.classList.toggle('on',poiOn[k]);renderPOI();});
+
+/* crosswalk markers */
+function cls(c){
+  if(layer==="sig")return c.sig==="Y"?"g":"rr";
+  if(layer==="green")return c.sig!=="Y"?"n":(c.g===0?"n":(short(c)?"a":"g"));
+  if(layer==="snd")return c.sig!=="Y"?"n":(c.snd==="Y"?"g":"rr");
+  if(layer==="brl")return c.brl==="Y"?"g":"rr";
+  if(layer==="low")return c.low==="Y"?"g":"rr";
+  if(layer==="lit")return c.lit>=2?"g":(c.lit===1?"a":"rr");
+  if(layer==="acc")return c.acc?"rr":"n";
+  if(layer==="slope"){const e=elevAt(c.lat,c.lng);return e==null?"n":(e>=38?"rr":(e>=30?"a":"g"));}
+}
+function label(c){
+  if(layer==="sig")return c.sig==="Y"?'신호등<small>'+c.lanes+'차로</small>':'신호 없음<small>'+c.lanes+'차로</small>';
+  if(layer==="green")return c.sig!=="Y"?'—<small>신호 없음</small>':(c.g?'초록 '+c.g+'초<small>필요 '+need(c)+'초</small>':'초록 ?<small>데이터 없음</small>');
+  if(layer==="snd")return c.sig!=="Y"?'—':(c.snd==="Y"?'🔊 있음':'🔊 없음');
+  if(layer==="brl")return c.brl==="Y"?'점자 ✓':'점자 ✗';
+  if(layer==="low")return c.low==="Y"?'턱 낮춤':'턱 있음';
+  if(layer==="lit")return '보안등 '+c.lit+'<small>30m 안</small>';
+  if(layer==="acc")return c.acc?'사고다발<small>100m 안</small>':'—';
+  if(layer==="slope"){const e=elevAt(c.lat,c.lng);return e==null?'—':'해발 '+e+'m<small>학교 25m</small>';}
+}
+const LEG={sig:['🚦 신호등','신호 있음','신호 없음 — 멈춰서 좌우 확인'],green:['⏱ 초록불 시간','한 번에 건널 수 있어요','내 걸음엔 짧아요 — 켜지자마자 출발'],snd:['🔊 음향신호기','있음','없음'],brl:['🟨 점자블록','있음','없음'],low:['♿ 보도턱','낮춤 완료','턱 있음'],lit:['💡 밝기 (보안등 30m)','2개 이상','없음'],acc:['⚠️ 사고다발 (2021~24)','','100m 안에 사고다발지역'],slope:['⛰ 경사·고도 (Copernicus 90m)','평지(~30m)','높은 곳(38m~) — 오르막·내리막 주의']};
+const markers=[];CW.forEach((c,i)=>{const m=L.marker([c.lat,c.lng],ico('',0));m.on('click',()=>openCard(i));markers.push(m);});
+function render(){
+  CW.forEach((c,i)=>{const k=cls(c);const dimmed=(layer==="acc"&&!c.acc)||(layer==="green"&&c.sig!=="Y")||(layer==="snd"&&c.sig!=="Y");
+    markers[i].setIcon(L.divIcon({className:'',html:'<div class="mk '+k+(dimmed?' dim':'')+(selected===i?' sel':'')+'"><div class="bub">'+label(c)+'</div><div class="tail"></div></div>',iconSize:[0,0]}));
+    markers[i].setZIndexOffset(k==="rr"?500:(k==="a"?400:100));
+    if(hidden||routeMode||!layerOn||map.getZoom()<16){markers[i].remove();}else{markers[i].addTo(map);} });
+  const L2=LEG[layer];
+  document.getElementById('legend').style.display=(routeMode||layerOn)?'':'none';document.getElementById('legend').innerHTML=routeMode?'<b>길 미리보기</b><span class="bar" style="background:var(--green)"></span>괜찮아요<br><span class="bar" style="background:var(--amber)"></span>조심<br><span class="bar" style="background:var(--red)"></span>주의 구간':'<b>'+L2[0]+'</b>'+(L2[1]?'<span class="dot" style="background:var(--green)"></span>'+L2[1]+'<br>':'')+'<span class="dot" style="background:var(--red)"></span>'+L2[2];
+  const all=CW.filter(c=>dist(c,SCHOOL)<=300);const noS=all.filter(c=>c.sig!=="Y").length,sh=all.filter(short).length,dk=all.filter(dark).length,ac=all.filter(c=>c.acc).length;
+  cntNoSig.textContent=noS;cntShort.textContent=sh;cntDark.textContent=dk;cntAcc.textContent=ac;
+  if(window.nCW){nCW.textContent=CW.length;nCC.textContent=CCTV.length;nBus.textContent=BUS.length;nH.textContent=HOSP.length;nP.textContent=PHARM.length;}
+}
+document.querySelectorAll('#layers .gi[data-l]').forEach(el=>el.onclick=()=>{document.querySelectorAll('#layers .gi').forEach(x=>x.classList.remove('on'));el.classList.add('on');layer=el.dataset.l;render();});
+tslider.oninput=e=>{hour=+e.target.value;const h=Math.floor(hour),m=hour%1?'30':'00';clock.textContent=String(h).padStart(2,'0')+':'+m;timechip.textContent=hour>=14&&hour<18?'하교 14~18시':(isNight()?'해 진 뒤 🌙':'낮');nowBtn.textContent=Math.abs(hour-14.5)<.01?'● 실시간':'시간 이동';if(isNight()&&!night){night=true;document.getElementById('swNight').classList.add('on');fNight.classList.add('on');toast('해가 졌어요 — 안심길(밝은 길·CCTV) 자동 켜짐');}if(routeMode)drawRoute();else render();};
+
+const sheets=['sh-onb','sh-search','sh-home','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card'];
+function show(id){if(id!=='sh-warn')stopLive();sheets.forEach(s=>document.getElementById(s).classList.toggle('hide',s!==id));}
+document.querySelectorAll('.rbtn[data-r]').forEach(b=>b.onclick=()=>{const k=b.dataset.r;const p=document.getElementById('pop-'+k);const open=p.classList.contains('hide');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));if(open){p.classList.remove('hide');b.classList.add('on');}
+  if(k==='layer'){layerOn=open;if(layerOn&&map.getZoom()<17)map.setZoom(17);render();if(layerOn)toast('건널목 보기 켜짐 — 칩으로 항목을 바꿔요 (지도 확대 시 표시)');}});
+map.on('zoomend',()=>render());
+/* 분석 그리드: 전부 동작 */
+const ANA={
+ '⏰ 시간대별 사고':()=>{toast('오후 2~6시 스쿨존 사상자 53% · 사망자 67% (도로교통공단) — 슬라이더를 14~18시로');tslider.value=15;tslider.oninput({target:tslider});},
+ '🌙 어두운 건널목':()=>{layerOn=true;document.querySelector('[data-l=lit]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast('보안등 30m 없는 건널목 — 대림초 반경 300m에 4곳');},
+ '🚲 자전거 사고':()=>{layerOn=true;document.querySelector('[data-l=acc]').click();document.querySelector('.rbtn[data-r=layer]').classList.add('on');map.setZoom(17);toast('자전거 사고다발(동작 61곳) 100m 안 건널목 표시');},
+ '↪ 우회전 사각지대 (분당)':()=>toast('성남시 API: 분당 횡단보도 417 중 155곳(37%)이 우회전 사각지대 — 분당 단계에서 경고 유형으로'),
+ '🟨 옐로카펫 대기위치':()=>toast('성남 옐로카펫 152곳(초등 38교 중 36교) · 동작 16곳 — "노란 카펫 위에서 기다려"'),
+ '🚦 실시간 신호 (API 수신 중)':()=>{preview('home');openWarn(2);toast('행안부 실시간 신호 API 15157604 — 교차로 4,237 · 방향별 1,342 수신 확인');}
+};
+document.querySelectorAll('#pop-analysis .gi').forEach(g=>{const t=g.textContent.trim();if(ANA[t])g.onclick=()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));ANA[t]();};else if(g.classList.contains('off'))g.onclick=()=>toast('본선에서 구현 예정');});
+/* 하교 시간대 칩 */
+timechip.onclick=e=>{e.stopPropagation();const tb=document.querySelector('.tbar');tb.style.display=tb.style.display==='none'?'':'none';toast(tb.style.display==='none'?'시간 슬라이더 숨김':'시간 슬라이더: 하교 14~18시 = 스쿨존 사고 53%/67% 시간대 · 18:30 넘기면 안심길 자동');};
+hideBtn.onclick=()=>{hidden=!hidden;hideBtn.classList.toggle('on',hidden);render();renderPOI();};
+map.on('click',()=>{document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));});
+fWalk.onclick=fSig.onclick=()=>show('sh-pref');
+fNight.onclick=()=>{night=!night;document.getElementById('swNight').classList.toggle('on',night);toggleNight();};
+fWheel.onclick=()=>{wheel=!wheel;document.getElementById('swWheel').classList.toggle('on',wheel);toggleWheel();};
+function toggleNight(){night=document.getElementById('swNight').classList.contains('on');fNight.classList.toggle('on',night);if(routeMode)drawRoute();}
+function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');fWheel.classList.toggle('on',wheel);if(routeMode)drawRoute();}
+segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';render();if(routeMode)drawRoute();});
+voiceBtn.onclick=()=>{voiceOn=!voiceOn;voiceBtn.classList.toggle('on',voiceOn);document.getElementById('swVoice').classList.toggle('on',voiceOn);toast(voiceOn?'음성 안내 켜짐':'음성 안내 꺼짐');};
+function openCard(i){if(routeMode)return;selected=i;render();const c=CW[i];cRoad.textContent=(c.rd||'도로명 없음')+' · '+c.lanes+'차로';cTitle.textContent=c.sig==="Y"?'신호등 있는 건널목':'신호등 없는 건널목';cSub.textContent=c.sig==="Y"&&c.g?('초록불 '+c.g+'초 · 내 걸음으론 '+need(c)+'초 필요'):(c.sig==="Y"?'녹색신호 시간 데이터 없음':'멈춰서 좌우 확인 후 건너는 곳');
+  const B=[['🚦 신호등',c.sig==="Y"],['🔊 음향신호기',c.snd==="Y"],['🟨 점자블록',c.brl==="Y"],['♿ 보도턱 낮춤',c.low==="Y"],['💡 보안등 '+c.lit,c.lit>0],['📹 CCTV 50m',CCTV.some(x=>dist({lat:x[0],lng:x[1]},c)<=50)]];
+  cBadges.innerHTML=B.map(b=>'<span class="bd '+(b[1]?'on':'off')+'">'+b[0]+'</span>').join('');const J=[];if(c.sig!=="Y")J.push('<span class="chip no">신호 없음</span>');if(short(c))J.push('<span class="chip mid">한 번에 못 건너요 — 켜지자마자 출발</span>');else if(c.sig==="Y"&&c.g)J.push('<span class="chip ok">한 번에 건너요</span>');if(c.acc)J.push('<span class="chip no">사고다발 100m 안</span>');if(dark(c))J.push('<span class="chip mid">어두운 곳</span>');cJudge.innerHTML=J.join('');show('sh-card');}
+function closeCard(){selected=null;render();show('sh-home');}
+
+/* ===== 길 미리보기 (구간별) ===== */
+function pick(lat,lng){let best=-1,bd=1e9;CW.forEach((c,i)=>{const d=dist(c,{lat,lng});if(d<bd){bd=d;best=i}});return best;}
+// 구간 정의: 목업 좌표 (실제는 OSM 보도망 A*). 각 구간에 대체(우회) 경로가 있음
+const ROUTES={
+ home:{name:'🏫 대림초 → 🏠 집',dest:HOME,segs:[
+  {id:'s1',pts:[[SCHOOL.lat,SCHOOL.lng],[37.50002127,126.9242518]],cw:pick(37.50002127,126.9242518),kind:'cw',m:60,alt:null},
+  {id:'s2',pts:[[37.50002127,126.9242518],[37.4999,126.9255],[37.49930467,126.926335]],cw:pick(37.49930467,126.926335),kind:'acc',m:180,alt:{pts:[[37.50002127,126.9242518],[37.50028389,126.9252086],[37.49999501,126.9254318],[37.49930467,126.926335]],cw:pick(37.49999501,126.9254318),m:230,why:'사고다발 100m 밖 · 4차로 신호등(초록 32초)'}},
+  {id:'s3',pts:[[37.49930467,126.926335],[37.4998,126.9275],[37.49946331,126.9278966]],cw:pick(37.49946331,126.9278966),kind:'cw',m:190,alt:null},
+  {id:'s4',pts:[[37.49946331,126.9278966],[37.50075452,126.9272772],[37.50161475,126.927952],[37.50211438,126.9275427],[HOME.lat,HOME.lng]],cw:null,kind:'slope',m:290,alt:{pts:[[37.49946331,126.9278966],[37.4997,126.9286],[37.5015,126.9288],[HOME.lat,HOME.lng]],m:340,why:'완만한 큰길 (보라매로 방면) · 보안등·CCTV 있음'}}
+ ]},
+ dojang:{name:'🏫 대림초 → 🥋 태권도',dest:DOJANG,segs:[
+  {id:'d1',pts:[[SCHOOL.lat,SCHOOL.lng],[37.50002127,126.9242518]],cw:pick(37.50002127,126.9242518),kind:'cw',m:60,alt:null},
+  {id:'d2',pts:[[37.50002127,126.9242518],[37.4999,126.9255],[37.49930467,126.926335]],cw:pick(37.49930467,126.926335),kind:'acc',m:180,alt:{pts:[[37.50002127,126.9242518],[37.50028389,126.9252086],[37.49999501,126.9254318],[37.49930467,126.926335]],cw:pick(37.49999501,126.9254318),m:230,why:'사고다발 100m 밖'}},
+  {id:'d3',pts:[[37.49930467,126.926335],[DOJANG.lat,DOJANG.lng]],cw:null,kind:'cw',m:40,alt:null}
+ ]}
+};
+let routeMode=false,cur=null,useAlt={},layersOnMap=[],warnMarkers=[];
+function segEval(s){ // 구간 평가 → {level:'ok'|'warn'|'bad', msgs:[], tags:[]}
+  const alt=useAlt[s.id]&&s.alt; const cw=alt?(s.alt.cw!=null?CW[s.alt.cw]:null):(s.cw!=null?CW[s.cw]:null); let lvl='ok',msgs=[],tags=[];
+  if(cw){ if(cw.sig!=="Y"){lvl='bad';msgs.push('신호 없는 건널목 — 멈춰서 좌우 보고');tags.push('🚦 신호 없음');}
+    else if(short(cw)){lvl=lvl==='bad'?'bad':'warn';msgs.push('초록 '+cw.g+'초 — 네 걸음엔 '+need(cw)+'초 필요. 켜지자마자 출발, 이미 켜졌으면 기다려');tags.push('⏱ 짧은 신호');}
+    if(cw.acc&&!alt){lvl='bad';msgs.push('사고 많이 난 곳(2024 스쿨존어린이 사고다발) — 손 들고 천천히');tags.push('⚠️ 사고다발');}
+    if(wheel&&cw.low!=="Y"){lvl='bad';msgs.push('보도턱 안 낮춰짐 — 휠체어는 우회');tags.push('♿ 턱');}
+    if(night&&cw.lit===0){lvl=lvl==='bad'?'bad':'warn';msgs.push('보안등 없음 — 밝은 쪽으로');tags.push('🌙 어두움');} }
+  if(s.kind==='slope'&&!alt){ const e1=elevAt(s.pts[0][0],s.pts[0][1]),e2=elevAt(s.pts[2][0],s.pts[2][1]); const g=Math.abs((e2-e1)/120*100).toFixed(0); if(wheel){lvl='bad';msgs.push('경사 약 '+g+'% — 휠체어 한계(8.3%) 넘음, 우회 권장');tags.push('⛰ 급경사');} else {lvl=lvl==='bad'?'bad':'warn';msgs.push('오르막 약 '+g+'% — 자전거·킥보드는 내려서');tags.push('⛰ 오르막');} }
+  if(night&&s.kind==='slope'&&!alt){lvl='bad';msgs.push('골목길 · CCTV 없음 — 밤엔 큰길 추천');tags.push('🌙 골목');}
+  return {level:lvl,msgs,tags,cw,alt};
+}
+function drawRoute(){
+  layersOnMap.forEach(l=>l.remove());warnMarkers.forEach(m=>m.remove());layersOnMap=[];warnMarkers=[];
+  const R=ROUTES[cur];let total=0,warn=0,bad=0,cwN=0,noS=0,sh=0,ac=0;const steps=[];
+  R.segs.forEach((s,i)=>{const ev=segEval(s);const pts=(useAlt[s.id]&&s.alt)?s.alt.pts:s.pts;const m=(useAlt[s.id]&&s.alt)?s.alt.m:s.m;total+=m;
+    const col=ev.level==='bad'?'#ED2831':(ev.level==='warn'?'#FF9500':'#00B75C');
+    const pl=L.polyline(pts,{color:col,weight:7,opacity:.95,lineJoin:'round'}).addTo(map);pl.on('click',()=>openWarn(i));layersOnMap.push(pl);
+    if(ev.cw){cwN++;if(ev.cw.sig!=="Y")noS++;if(short(ev.cw))sh++;if(ev.cw.acc&&!(useAlt[s.id]&&s.alt))ac++;}
+    const mid=pts[Math.floor(pts.length/2)];
+    if(ev.level!=='ok'){warn++;if(ev.level==='bad')bad++;const mk=L.marker(mid,ico('<div class="mk warn '+(ev.level==='warn'?'amb':'')+'"><div class="bub">'+ev.tags[0]+'</div><div class="tail"></div></div>',800)).addTo(map);mk.on('click',()=>openWarn(i));warnMarkers.push(mk);}
+    else if(useAlt[s.id]){const mk=L.marker(mid,ico('<div class="mk warn done"><div class="bub">✅ 우회 적용</div><div class="tail"></div></div>',800)).addTo(map);mk.on('click',()=>openWarn(i));warnMarkers.push(mk);}
+    steps.push({i,ev,m,s});});
+  rEye.textContent='길 미리보기 · '+R.name;rWarnN.textContent=warn;
+  rSub.textContent='도보 '+Math.round(total/(speed*60*0.9))+'분 · '+total+'m · 건널목 '+cwN+'곳 · '+WALKNM[speed]+(night?' · 🌙 안심길':'')+(wheel?' · ♿':'');
+  rStats.innerHTML='<div class="stat"><b>'+cwN+'</b><span>건널목</span></div><div class="stat '+(noS?'bad':'ok')+'"><b>'+noS+'</b><span>신호 없음</span></div><div class="stat '+(sh?'warn':'ok')+'"><b>'+sh+'</b><span>짧은 신호</span></div><div class="stat '+(bad?'bad':'ok')+'"><b>'+warn+'</b><span>조심할 곳</span></div>';
+  rSteps.innerHTML=steps.map(({i,ev,m,s})=>{const col=ev.level==='bad'?'var(--red)':(ev.level==='warn'?'var(--amber)':'var(--green)');const t=ev.level==='ok'?((useAlt[s.id]&&s.alt)?'✅ 우회 적용 · '+s.alt.why:(ev.cw?(ev.cw.rd+' 건널목 · '+ev.cw.lanes+'차로 · 초록 '+ev.cw.g+'초'):'큰길 · 괜찮아요')):ev.tags.join(' · ');const d=ev.level==='ok'?(ev.cw?('한 번에 건널 수 있어요'+(ev.cw.snd==="Y"?' · 🔊 음향신호기':'')):m+'m'):ev.msgs[0];return '<div class="step" onclick="openWarn('+i+')"><div class="ic" style="background:'+col+'">'+(i+1)+'</div><div><div class="t">'+t+'</div><div class="d">'+d+'</div></div>'+(ev.level!=='ok'&&s.alt?'<div class="act">이 구간만 우회 ›</div>':'')+'</div>';}).join('');
+  render();
+}
+function preview(key){cur=key;routeMode=true;useAlt={};drawRoute();const R=ROUTES[key];const b=L.latLngBounds([[SCHOOL.lat,SCHOOL.lng],[R.dest.lat,R.dest.lng]]);map.fitBounds(b.pad(.35));qtext.textContent=R.name;show('sh-route');const n=+rWarnN.textContent;say('오늘 이 길에 조심할 곳이 '+n+'곳 있어요.');}
+let curWarn=null;
+function openWarn(i){curWarn=i;const s=ROUTES[cur].segs[i];const ev=segEval(s);const zp=(useAlt[s.id]&&s.alt)?s.alt.pts:s.pts;map.fitBounds(L.latLngBounds(zp).pad(0.9),{maxZoom:18,animate:true});layersOnMap.forEach((pl,k)=>pl.setStyle({opacity:k===i?1:.35,weight:k===i?9:6}));wEye.textContent='구간 '+(i+1)+' · '+((useAlt[s.id]&&s.alt)?s.alt.m:s.m)+'m';
+  wTitle.textContent=ev.level==='ok'?((useAlt[s.id]&&s.alt)?'우회 적용된 구간':'괜찮은 구간'):ev.tags.join(' · ');wSub.textContent=ev.msgs.join(' / ')||(ev.cw?(ev.cw.rd+' · 한 번에 건널 수 있어요'):'큰길이라 괜찮아요');
+  const c=ev.cw;wBadges.innerHTML=c?[['🚦 신호등',c.sig==="Y"],['🔊 음향신호기',c.snd==="Y"],['♿ 보도턱 낮춤',c.low==="Y"],['💡 보안등 '+c.lit,c.lit>0],['📹 CCTV 50m',CCTV.some(x=>dist({lat:x[0],lng:x[1]},c)<=50)]].map(b=>'<span class="bd '+(b[1]?'on':'off')+'">'+b[0]+'</span>').join(''):'';
+  wChips.innerHTML=ev.level==='ok'?'<span class="chip ok">✅ 이대로 가도 돼요</span>':ev.tags.map(t=>'<span class="chip '+(ev.level==='bad'?'no':'mid')+'">'+t+'</span>').join('');
+  /* v6: 10초 카드 + 실시간 + 기여 요인(설명가능성) */
+  if(c&&c.sig==="Y"&&c.g){const nd=need(c),gap=nd-c.g;wBig.innerHTML='<div class="big"><span class="n '+(gap>0?'red':'green')+'">'+c.g+'<small style="font-size:14px">초</small></span><small>초록불</small><span class="n" style="font-size:22px;color:var(--sub)">vs</span><span class="n">'+nd+'<small style="font-size:14px">초</small></span><small>내 걸음</small></div>'+(gap>0?'<div class="gap">⏱ '+gap+'초 부족 — 켜지자마자 출발, 이미 켜졌으면 다음 신호</div>':'<div class="gap" style="background:#E6F8EE;color:#0A8A45">✅ '+(-gap)+'초 여유 — 한 번에 건너요</div>');
+    startLive(c);}
+  else{wBig.innerHTML='';wLive.innerHTML='';stopLive();}
+  const why=[];if(c){if(c.sig!=="Y")why.push(['+41','신호등 없음']);if(c.acc)why.push(['+27','100m 안 사고다발(2024)']);if(c.lanes>=4)why.push(['+12',c.lanes+'차로 · 횡단거리 '+(c.lanes*3.25).toFixed(0)+'m']);if(c.lit===0)why.push(['+9','보안등 30m 없음']);if(short(c))why.push(['+15','녹색초 부족']);if(c.snd==="Y")why.push(['−6','음향신호기 있음']);}
+  wWhy.innerHTML=why.length?'<div class="src" style="margin:8px 0 2px">왜 조심해야 하나요</div>'+why.slice(0,3).map(w=>'<div class="w"><b>'+w[0]+'</b>'+w[1]+'</div>').join(''):'';
+  const btn=document.getElementById('wDetour');if(s.alt&&!useAlt[s.id]){btn.style.display='';btn.textContent=(s.kind==='slope'?(night?'안심길로 우회':'완만한 길로 우회'):'다른 건널목으로 우회')+' (+'+(s.alt.m-s.m)+'m)';btn.onclick=()=>{useAlt[s.id]=true;drawRoute();toast('구간 '+(i+1)+'만 우회했어요 — 나머지는 그대로');say('이 구간만 돌아가요.');show('sh-route');};}
+  else if(s.alt&&useAlt[s.id]){btn.style.display='';btn.textContent='원래 길로 되돌리기';btn.onclick=()=>{delete useAlt[s.id];drawRoute();show('sh-route');};}
+  else {btn.style.display='';btn.textContent=ev.level==='ok'?'이 구간은 우회가 필요 없어요':'우회 경로 없음 — 이 건널목에서 조심';btn.onclick=()=>toast(ev.level==='ok'?'괜찮은 구간이에요':'근처에 더 나은 건널목이 없어요 — 알려만 드려요');}
+  show('sh-warn');if(ev.msgs[0])say(ev.msgs[0]);}
+/* v6 실시간 신호 (행안부 15157604 형식: 점등상태 + 잔여초) — 목업은 로컬 카운트다운 */
+let liveT=null;
+function startLive(c){stopLive();let red=true,left=12;const g=c.g||25;const draw=()=>{wLive.innerHTML='<span class="live '+(red?'':'g')+'"><span class="pd"></span>'+(red?'빨간불 · '+left+'초 남음':'초록불 · '+left+'초 남음')+'</span>'+(red&&left<=3?'<div class="src" style="color:var(--brand);font-weight:800">곧 초록불 — 켜지면 바로 출발!</div>':'')+(!red&&left<need(c)?'<div class="src" style="color:var(--red);font-weight:800">지금 건너면 못 건너요 — 다음 신호 기다려</div>':'');};draw();liveT=setInterval(()=>{left--;if(left<=0){red=!red;left=red?40:g;}draw();},1000);}
+function stopLive(){if(liveT){clearInterval(liveT);liveT=null;}}
+function backHome(){stopLive();routeMode=false;layersOnMap.forEach(l=>l.remove());warnMarkers.forEach(m=>m.remove());layersOnMap=[];warnMarkers=[];map.setView([37.5008,126.9262],17);qtext.textContent='어디로 가요?';render();show('sh-home');}
+function fitRoute(){if(!cur)return;layersOnMap.forEach(pl=>pl.setStyle({opacity:.95,weight:7}));const R=ROUTES[cur];map.fitBounds(L.latLngBounds([[SCHOOL.lat,SCHOOL.lng],[R.dest.lat,R.dest.lng]]).pad(.35));}
+let shared=false;function shareGuardian(){shared=true;toast('👪 보호자에게 공유됨 — 출발·도착·지연 알림만 (위치 X)');say('보호자에게 길을 공유했어요.');}
+let fi=0;
+function startWalk(share){fi=0;const eta=clock.textContent.replace(/(\d+):(\d+)/,(m,h,mm)=>String(+h).padStart(2,'0')+':'+String((+mm+9)%60).padStart(2,'0'));if(shared){toast('🏫 출발 · 도착 예정 '+eta+' → 보호자에게 알림 전송');say('출발! 보호자에게 알려드렸어요.');}else{toast('길 안내 시작 · 도착 예정 '+eta);say('길 안내를 시작할게요.');}renderFollow();show('sh-follow');}
+function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=segEval(s);fEye.textContent='구간 '+(fi+1)+'/'+segs.length+' · '+((useAlt[s.id]&&s.alt)?s.alt.m:s.m)+'m 앞';
+  fTitle.textContent=ev.cw?(ev.cw.rd+' 건널목 · '+ev.cw.lanes+'차로'):(ev.level==='ok'?'큰길 · 괜찮아요':ev.tags[0]);fSub.textContent=ev.msgs[0]||(ev.cw?('초록 '+ev.cw.g+'초 · 내 걸음 '+need(ev.cw)+'초 · 한 번에 건너요'):'그대로 가요');
+  fChips.innerHTML=(ev.cw&&ev.cw.sig==="Y"?'<span class="chip '+(short(ev.cw)?'mid':'ok')+'">'+(short(ev.cw)?'켜지자마자 출발':'한 번에 건너요')+'</span>':'')+(ev.cw&&ev.cw.snd==="Y"?'<span class="chip ok">🔊 음향신호기</span>':'')+(ev.cw&&ev.cw.sig==="Y"?'<span class="live"><span class="pd"></span>빨간불 · 12초 남음</span>':'');
+  fLeft.textContent=segs.filter((x,k)=>k>=fi&&segEval(x).cw).length;fMin.textContent=Math.max(1,Math.round(segs.slice(fi).reduce((a,x)=>a+((useAlt[x.id]&&x.alt)?x.alt.m:x.m),0)/(speed*60*0.9)))+'분';
+  const pts=(useAlt[s.id]&&s.alt)?s.alt.pts:s.pts;map.panTo(pts[0]);say(fSub.textContent);}
+function nextStep(){const segs=ROUTES[cur].segs;if(fi>=segs.length-1){toast('🏠 도착했어요 · 건널목 '+segs.filter(x=>segEval(x).cw).length+'곳 지났어요'+(shared?' → 보호자에게 전송됨':''));say('도착! 잘 왔어요.');backHome();return;}fi++;renderFollow();}
+function finishOnb(){const v=onbSpeed.querySelector('.on').dataset.v;speed=+v;fWalk.textContent='🚶 '+{1:'뛸 수 있어요',0.8:'보통',0.7:'천천히'}[speed]+' ▾';segSpeed.querySelectorAll('div').forEach(x=>x.classList.toggle('on',x.dataset.v===v));toast('저장됐어요 — 🏫 대림초 · 🏠 집 · 🥋 태권도');show('sh-home');render();}
+onbSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{onbSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');});
+render();renderPOI();
+/* 주소 검색 (예시: 실주소 일부) */
+const SUG=[["서울특별시 동작구 여의대방로44길 39","대방동 · 집 근처","home"],["서울특별시 동작구 상도로 170","상도동 · 장승배기역 3번출구","home"],["대방어린이집","서울특별시 동작구 대방동","home"],["△△태권도장","대방동 · 도보 6분","dojang"],["보라매병원","서울특별시 동작구 보라매로5길 20","home"],["대방역 3번출구","지하철 1호선","home"]];
+function openSearch(){if(routeMode)return;show('sh-search');searchSuggest('');setTimeout(()=>document.getElementById('inTo').focus(),100);}
+function searchSuggest(q){const L=SUG.filter(s=>!q||s[0].includes(q)||s[1].includes(q));sugList.innerHTML=(q?'':'<div class="src" style="margin:6px 0 2px">최근 · 추천</div>')+(L.map(s=>'<div class="sug" onclick="pickDest(\''+s[2]+'\',\''+s[0]+'\')">📍 '+s[0]+'<small>'+s[1]+'</small></div>').join('')||'<div class="src">검색 결과 없음 (예시 목록)</div>');}
+function pickDest(key,label){if(key==='school'||key==='gm'){toast('예시: 저장 장소 '+(key==='gm'?'할머니집':'학교')+' — 목업엔 경로 없음');return;}document.getElementById('inTo').value=label||(key==='home'?'🏠 집':'🥋 태권도');preview(key);}
+</script>
+</body>
+</html>
