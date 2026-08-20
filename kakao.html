@@ -176,6 +176,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  </div>
 
  <div class="legend" id="legend"></div>
+ <div id="goFab" style="position:absolute;left:12px;bottom:150px;z-index:26;background:var(--brand);color:#fff;border-radius:999px;padding:13px 20px;font-size:14.5px;font-weight:800;box-shadow:0 4px 14px rgba(255,92,138,.4);cursor:pointer">🚶 길 찾기</div>
  <div class="voice" id="voiceBtn" title="음성 안내 (설정에서 켜기)">🔇</div>
 
  <!-- 홈: 자주 가는 길 -->
@@ -197,8 +198,8 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="sub" id="rSub"></div>
   <div class="statrow" id="rStats"></div>
   <div id="rSteps"></div>
-  <div class="row2"><button class="btn s" onclick="backHome()">뒤로</button><button class="btn p" onclick="startWalk(false)">길 안내 시작</button></div>
-  <button class="btn o" onclick="shareGuardian()">👪 보호자에게 공유 (출발·도착 알림)</button>
+  <div class="row2"><button class="btn s" style="flex:0 0 76px" onclick="toast('길을 저장했어요');">🔖<br><span style="font-size:11px">저장</span></button><button class="btn s" style="flex:0 0 76px" onclick="shareGuardian()">👪<br><span style="font-size:11px">공유</span></button><button class="btn p" onclick="startWalk(false)">🚶 따라가기</button></div>
+  <button class="btn s" onclick="backHome()">뒤로</button>
   <div class="src">위험한 곳은 돌아가게 하지 않아요 — 알려드리고, 우회는 원할 때만.</div>
  </div>
 
@@ -255,15 +256,20 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="src" style="text-align:center">로그인 없이 이 기기에만 저장돼요</div>
  </div>
 
- <!-- 따라가기 -->
+ <!-- 따라가기 (그늘로 문법: 상단 다음 지점 카드 + 하단 요약) -->
+ <div id="fTopCard" class="hide" style="position:absolute;top:100px;left:12px;right:12px;z-index:36;background:#fff;border-radius:20px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.16);display:flex;align-items:center;gap:12px">
+  <span style="font-size:26px">🚦</span>
+  <div style="flex:1;min-width:0"><div id="fEye" style="font-size:14px;font-weight:800;color:#0A8A45"></div><div id="fTitle" style="font-size:18px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div>
+  <span onclick="backHome()" style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:800">✕</span>
+ </div>
  <div class="sheet hide" id="sh-follow">
   <div class="grab"></div>
-  <div class="eyebrow" id="fEye"></div>
-  <h2 id="fTitle"></h2>
   <div class="sub" id="fSub"></div>
   <div class="chips" id="fChips"></div>
-  <div class="statrow"><div class="stat"><b id="fLeft">3</b><span>남은 건널목</span></div><div class="stat"><b id="fMin">9분</b><span>남은 시간</span></div><div class="stat ok"><b>🚌 3분</b><span>대림초입구 도착(실시간)</span></div></div>
-  <div class="row2"><button class="btn s" onclick="show('sh-route')">경로 보기</button><button class="btn p" onclick="nextStep()">다음 →</button></div>
+  <div class="statrow"><div class="stat"><b id="fMin">9분</b><span>남은 시간</span></div><div class="stat"><b id="fDist">410m</b><span>남은 거리</span></div><div class="stat"><b id="fEta">14:20</b><span>도착 예정</span></div></div>
+  <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-top:2px"><span style="color:#0A8A45">● 남은 건널목 <b id="fLeft">3</b></span><span id="fProgTxt" style="color:var(--sub)"></span></div>
+  <div style="height:6px;border-radius:3px;background:#eee;margin-top:6px;overflow:hidden"><div id="fProg" style="height:100%;width:0%;background:var(--green)"></div></div>
+  <div class="row2"><button class="btn s" onclick="show('sh-route');document.getElementById('fTopCard').classList.add('hide')">경로 보기</button><button class="btn p" onclick="nextStep()">다음 →</button></div>
  </div>
 
  <!-- 건널목 카드 (보기 모드) -->
@@ -642,15 +648,15 @@ function openWarn(i){curWarn=i;const s=ROUTES[cur].segs[i];const ev=segEval(s);c
 let liveT=null;
 function startLive(c){stopLive();let red=true,left=12;const g=c.g||25;const draw=()=>{wLive.innerHTML='<span class="live '+(red?'':'g')+'"><span class="pd"></span>'+(red?'빨간불 · '+left+'초 남음':'초록불 · '+left+'초 남음')+'</span>'+(red&&left<=3?'<div class="src" style="color:var(--brand);font-weight:800">곧 초록불 — 켜지면 바로 출발!</div>':'')+(!red&&left<need(c)?'<div class="src" style="color:var(--red);font-weight:800">지금 건너면 못 건너요 — 다음 신호 기다려</div>':'');};draw();liveT=setInterval(()=>{left--;if(left<=0){red=!red;left=red?40:g;}draw();},1000);}
 function stopLive(){if(liveT){clearInterval(liveT);liveT=null;}}
-function backHome(){stopLive();routeMode=false;layersOnMap.forEach(l=>l.remove());warnMarkers.forEach(m=>m.remove());layersOnMap=[];warnMarkers=[];map.setView([37.5008,126.9262],17);document.getElementById('inTo').value='';render();show('sh-home');}
+function backHome(){document.getElementById('fTopCard')&&document.getElementById('fTopCard').classList.add('hide');stopLive();routeMode=false;layersOnMap.forEach(l=>l.remove());warnMarkers.forEach(m=>m.remove());layersOnMap=[];warnMarkers=[];map.setView([37.5008,126.9262],17);document.getElementById('inTo').value='';render();show('sh-home');}
 function fitRoute(){if(!cur)return;layersOnMap.forEach(pl=>pl.setStyle({opacity:.95,weight:7}));const R=ROUTES[cur];map.fitBounds(L.latLngBounds([[SCHOOL.lat,SCHOOL.lng],[R.dest.lat,R.dest.lng]]).pad(.35));}
 let shared=false;function shareGuardian(){shared=true;toast("👪 보호자에게 공유했어요");say('보호자에게 길을 공유했어요.');}
 let fi=0;
 function startWalk(share){fi=0;const dd=new Date(Date.now()+9*60000);const eta=String(dd.getHours()).padStart(2,"0")+":"+String(dd.getMinutes()).padStart(2,"0");if(shared){toast('🏫 출발 · 도착 예정 '+eta+' → 보호자에게 알림 전송');say('출발! 보호자에게 알려드렸어요.');}else{toast('길 안내 시작 · 도착 예정 '+eta);say('길 안내를 시작할게요.');}renderFollow();show('sh-follow');}
-function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=segEval(s);fEye.textContent='구간 '+(fi+1)+'/'+segs.length+' · '+((useAlt[s.id]&&s.alt)?s.alt.m:s.m)+'m 앞';
+function renderFollow(){const segs=ROUTES[cur].segs;const s=segs[fi];const ev=segEval(s);document.getElementById('fTopCard').classList.remove('hide');fEye.textContent=(((useAlt[s.id]&&s.alt)?s.alt.m:s.m))+'m';
   fTitle.textContent=ev.cw?(ev.cw.rd+' 건널목 · '+ev.cw.lanes+'차로'):(ev.level==='ok'?'큰길 · 괜찮아요':ev.tags[0]);fSub.textContent=ev.msgs[0]||(ev.cw?('초록 '+ev.cw.g+'초 · 내 걸음 '+need(ev.cw)+'초 · 한 번에 건너요'):'그대로 가요');
   fChips.innerHTML=(ev.cw&&ev.cw.sig==="Y"?'<span class="chip '+(short(ev.cw)?'mid':'ok')+'">'+(short(ev.cw)?'켜지자마자 출발':'한 번에 건너요')+'</span>':'')+(ev.cw&&ev.cw.snd==="Y"?'<span class="chip ok">🔊 음향신호기</span>':'')+(ev.cw&&ev.cw.sig==="Y"?'<span class="live"><span class="pd"></span>빨간불 · 12초 남음</span>':'');
-  fLeft.textContent=segs.filter((x,k)=>k>=fi&&segEval(x).cw).length;fMin.textContent=Math.max(1,Math.round(segs.slice(fi).reduce((a,x)=>a+((useAlt[x.id]&&x.alt)?x.alt.m:x.m),0)/(speed*60*0.9)))+'분';
+  fLeft.textContent=segs.filter((x,k)=>k>=fi&&segEval(x).cw).length;const remM=segs.slice(fi).reduce((a,x)=>a+((useAlt[x.id]&&x.alt)?x.alt.m:x.m),0);const totM=segs.reduce((a,x)=>a+((useAlt[x.id]&&x.alt)?x.alt.m:x.m),0);const mins=Math.max(1,Math.round(remM/(speed*60*0.9)));fMin.textContent=mins+'분';document.getElementById('fDist').textContent=remM+'m';const ed=new Date(Date.now()+mins*60000);document.getElementById('fEta').textContent=String(ed.getHours()).padStart(2,'0')+':'+String(ed.getMinutes()).padStart(2,'0');document.getElementById('fProg').style.width=Math.round((1-remM/totM)*100)+'%';document.getElementById('fProgTxt').textContent='구간 '+(fi+1)+'/'+segs.length;
   const pts=(useAlt[s.id]&&s.alt)?s.alt.pts:s.pts;map.panTo(pts[0]);say(fSub.textContent);}
 function nextStep(){const segs=ROUTES[cur].segs;if(fi>=segs.length-1){toast('🏠 도착했어요 · 건널목 '+segs.filter(x=>segEval(x).cw).length+'곳 지났어요'+(shared?' → 보호자에게 전송됨':''));say('도착! 잘 왔어요.');backHome();return;}fi++;renderFollow();}
 render();renderPOI();
