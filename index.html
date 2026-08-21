@@ -12,8 +12,8 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
 .phone{width:390px;height:820px;background:var(--bg);border-radius:44px;overflow:hidden;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.18);flex-shrink:0;}
 #map{position:absolute;inset:0;z-index:1;}
 .leaflet-control-attribution{font-size:9px;}
-.statusbar{position:absolute;top:0;left:0;right:0;height:44px;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none;}
-.top{position:absolute;top:50px;left:12px;right:70px;z-index:30;}
+.hide:not(.sheet){display:none !important;}
+.top{position:absolute;top:12px;left:12px;right:70px;z-index:30;}
 .search{background:var(--card);border-radius:16px;padding:11px 14px;font-size:14.5px;color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;}
 .search .q{flex:1;font-weight:700;}
 .search .time{background:var(--soft);color:var(--brand);border-radius:var(--pill);padding:5px 9px;font-size:11px;font-weight:800;white-space:nowrap;}
@@ -21,10 +21,10 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
 .layers::-webkit-scrollbar{display:none;}
 .fchip{background:#fff;border:1.5px solid #e0e0e6;color:var(--ink);font-size:12px;padding:8px 12px;border-radius:var(--pill);font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .fchip.on{border-color:var(--brand);background:var(--soft);color:var(--brand);}
-.rstack{position:absolute;right:12px;top:50px;z-index:30;display:flex;flex-direction:column;gap:6px;}
+.rstack{position:absolute;right:12px;top:12px;z-index:30;display:flex;flex-direction:column;gap:6px;}
 .rbtn{width:50px;height:42px;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 2px 8px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--ink);cursor:pointer;text-align:center;line-height:1.1;}
 .rbtn.on{background:var(--brand);color:#fff;}
-.pop{position:absolute;right:70px;top:50px;z-index:32;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:12px;width:200px;}
+.pop{position:absolute;right:70px;top:12px;z-index:36;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:12px;width:200px;}
 .pop.hide{display:none;} .pop.grid{width:286px;}
 .pop-h{border-radius:12px;padding:9px;text-align:center;font-weight:800;font-size:13px;color:var(--ink);background:var(--bg);margin-bottom:8px;}
 .pop-i{border:1.5px solid #e6e6ea;border-radius:12px;padding:9px;text-align:center;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px;cursor:pointer;}
@@ -102,9 +102,10 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
 .step .t{font-size:13px;font-weight:700;color:var(--ink);line-height:1.35;}
 .step .d{font-size:11px;color:var(--sub);margin-top:2px;}
 .step .act{margin-left:auto;font-size:11px;font-weight:800;color:var(--brand);white-space:nowrap;align-self:center;}
-.toast{position:absolute;left:50%;top:100px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:var(--pill);padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
+.toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:var(--pill);padding:10px 16px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;}
 .voice{position:absolute;right:12px;bottom:210px;z-index:25;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;}
+.myloc{width:16px;height:16px;border-radius:50%;background:var(--brand);border:3px solid #fff;box-shadow:0 0 0 6px rgba(255,92,138,.25),0 1px 6px rgba(0,0,0,.3);}
 .voice.on{background:var(--brand);}
 /* v6: 오프닝 스플래시 · 10초 카드 · 실시간 · 리포트 */
 .splash{position:absolute;inset:0;z-index:70;background:linear-gradient(180deg,#FFF0F5 0%,#fff 60%);display:flex;flex-direction:column;justify-content:center;padding:36px 28px;}
@@ -140,7 +141,6 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
 <body>
 <div class="phone">
  <div id="map"></div>
- <div class="statusbar"><span>2:41</span><span>●●● ᯤ 79</span></div>
  <div class="toast" id="toast"></div>
 
  <!-- v6 오프닝: 조준점 하나 -->
@@ -162,7 +162,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   </div>
  </div>
  <div class="rstack">
-  <div class="rbtn" data-r="layer">테마</div>
+  <div class="rbtn" data-r="layer">건널목</div>
   <div class="rbtn" data-r="analysis">분석</div>
   <div class="rbtn" id="hideBtn">숨김</div>
  </div>
@@ -179,7 +179,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
 
  <div class="legend" id="legend"></div>
  <div id="goFab" style="position:absolute;left:12px;bottom:150px;z-index:26;background:var(--brand);color:#fff;border-radius:999px;padding:13px 20px;font-size:14.5px;font-weight:800;box-shadow:0 4px 14px rgba(255,92,138,.4);cursor:pointer">🚶 길 찾기</div>
- <div class="voice" id="voiceBtn" title="음성 안내 (설정에서 켜기)">🔇</div>
+ <div class="voice" id="locBtn" title="현위치"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F1F23" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="#1F1F23" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg></div>
 
  <!-- 홈: 자주 가는 길 -->
  <div class="sheet hide" id="sh-home">
@@ -260,7 +260,7 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
  </div>
 
  <!-- 따라가기 (그늘로 문법: 상단 다음 지점 카드 + 하단 요약) -->
- <div id="fTopCard" class="hide" style="position:absolute;top:100px;left:12px;right:12px;z-index:36;background:#fff;border-radius:20px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.16);display:flex;align-items:center;gap:12px">
+ <div id="fTopCard" class="hide" style="position:absolute;top:62px;left:12px;right:12px;z-index:36;background:#fff;border-radius:20px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,.16);display:flex;align-items:center;gap:12px">
   <span style="font-size:26px">🚦</span>
   <div style="flex:1;min-width:0"><div id="fEye" style="font-size:14px;font-weight:800;color:#0A8A45"></div><div id="fTitle" style="font-size:18px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div>
   <span onclick="backHome()" style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:800">✕</span>
@@ -590,7 +590,13 @@ function updateSummary(){const sig=document.querySelector('#segSig .on');const p
 function toggleNight(){night=document.getElementById('swNight').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
 function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
 segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;updateSummary();render();if(routeMode)drawRoute();});
-voiceBtn.onclick=()=>{voiceOn=!voiceOn;voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);document.getElementById("swVoice").classList.toggle("on",voiceOn);toast(voiceOn?"음성 안내 켜짐":"음성 안내 꺼짐");};document.getElementById("swVoice").addEventListener("click",()=>{voiceOn=document.getElementById("swVoice").classList.contains("on");voiceBtn.textContent=voiceOn?"🔊":"🔇";voiceBtn.classList.toggle("on",voiceOn);});
+document.getElementById("swVoice").addEventListener("click",()=>{voiceOn=document.getElementById("swVoice").classList.contains("on");toast(voiceOn?"음성 안내 켜짐":"음성 안내 꺼짐");});
+let myLocMk=null;
+document.getElementById("locBtn").onclick=()=>{if(!navigator.geolocation){toast('이 기기에선 위치를 쓸 수 없어요');return;}
+ navigator.geolocation.getCurrentPosition(p=>{const la=p.coords.latitude,lo=p.coords.longitude;
+  if(myLocMk)myLocMk.remove();myLocMk=L.marker([la,lo],ico('<div class="myloc"></div>',30)).addTo(map);
+  map.setView([la,lo],17);toast('현위치로 이동했어요');
+ },()=>toast('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:8000});};
 function openCard(i){if(routeMode)return;selected=i;render();const c=CW[i];cRoad.textContent=(c.rd||'도로명 없음')+' · '+c.lanes+'차로';cTitle.textContent=c.sig==="Y"?'신호등 있는 건널목':'신호등 없는 건널목';cSub.textContent=c.sig==="Y"&&c.g?('초록불 '+c.g+'초 · 내 걸음으론 '+need(c)+'초 필요'):(c.sig==="Y"?'녹색신호 시간 데이터 없음':'멈춰서 좌우 확인 후 건너는 곳');
   const B=[['🚦 신호등',c.sig==="Y"],['🔊 음향신호기',c.snd==="Y"],['🟨 점자블록',c.brl==="Y"],['♿ 보도턱 낮춤',c.low==="Y"],['💡 보안등 '+c.lit,c.lit>0],['📹 CCTV 50m',CCTV.some(x=>dist({lat:x[0],lng:x[1]},c)<=50)]];
   cBadges.innerHTML=B.map(b=>'<span class="bd '+(b[1]?'on':'off')+'">'+b[0]+'</span>').join('');const J=[];if(c.sig!=="Y")J.push('<span class="chip no">신호 없음</span>');if(short(c))J.push('<span class="chip mid">한 번에 못 건너요 — 켜지자마자 출발</span>');else if(c.sig==="Y"&&c.g)J.push('<span class="chip ok">한 번에 건너요</span>');if(c.acc)J.push('<span class="chip no">사고다발 100m 안</span>');if(dark(c))J.push('<span class="chip mid">어두운 곳</span>');cJudge.innerHTML=J.join('');show('sh-card');}
