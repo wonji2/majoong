@@ -187,6 +187,8 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   <div class="eyebrow" id="rEye">길 미리보기 · 🏫 대림초 → 🏠 집</div>
   <h2 id="rTitle">오늘 이 길, 조심할 곳 <span id="rWarnN">3</span>곳</h2>
   <div class="sub" id="rSub"></div>
+  <div class="seg" id="segSpeedR" style="margin:6px 0 2px"><div data-v="1.0">보통</div><div data-v="0.8">천천히</div><div data-v="0.7">느긋하게</div></div>
+  <div class="src" style="margin-top:2px">걸음을 바꾸면 이 길의 모든 판정이 다시 계산돼요.</div>
   <div class="statrow" id="rStats"></div>
   <div class="gap hide" id="rTrade"></div>
   <div id="rSteps"></div>
@@ -224,13 +226,23 @@ body{background:#e9eaec;display:flex;justify-content:center;gap:28px;padding:24p
   
  </div>
 
+ <!-- 첫 방문: 걸음 질문 (컨셉 — 속도를 묻는 지도) -->
+ <div class="sheet hide" id="sh-walk">
+  <div class="grab"></div>
+  <div class="eyebrow">마중길은 길보다 걸음을 먼저 물어요</div>
+  <h2>얼마나 빨리 걸으세요?</h2>
+  <div class="seg" id="segSpeedW"><div data-v="1.0">보통</div><div data-v="0.8" class="on">천천히</div><div data-v="0.7">느긋하게</div></div>
+  <div class="src">이 걸음으로 모든 신호등과 건널목을 다시 계산해요. 나중에 ⚙설정에서 언제든 바꿀 수 있어요.</div>
+  <button class="btn p" onclick="walkDone()">이 걸음으로 시작</button>
+ </div>
+
  <!-- 걷기 설정 -->
  <div class="sheet hide pref" id="sh-pref">
   <div class="grab"></div>
   <div class="eyebrow">내 걷기 설정</div>
-  <h2>어떤 길이 편하세요?</h2>
+  <h2>어떤 걸음이세요?</h2>
   <h4>🚶 걸음</h4>
-  <div class="seg" id="segSpeed"><div data-v="1.0">뛸 수 있어요</div><div data-v="0.8" class="on">보통</div><div data-v="0.7">천천히 걸어요</div></div>
+  <div class="seg" id="segSpeed"><div data-v="1.0">보통</div><div data-v="0.8" class="on">천천히</div><div data-v="0.7">느긋하게</div></div>
   <div class="src">내 걸음에 맞춰 초록불 시간을 계산해요.</div>
   <h4>🚦 건널목</h4>
   <div class="seg" id="segSig"><div class="on">신호등만</div><div>균형</div><div>상관없어요</div></div>
@@ -421,7 +433,7 @@ const SCHOOL={lat:37.50061292,lng:126.9248853};
 const HOME={lat:37.50290983,lng:126.9290000};
 const DOJANG={lat:37.49930467,lng:126.926335};
 const ACC=[{lat:37.500166,lng:126.925842,y:2024,t:"스쿨존어린이",n:2},{lat:37.500081,lng:126.920412,y:2024,t:"자전거",n:5}];
-const WALKNM={1:"뛸 수 있어요",0.8:"보통",0.7:"천천히 걸어요"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=false, layerOn=false;
+const WALKNM={1:"보통",0.8:"천천히",0.7:"느긋하게"};let speed=0.8, hour=14.5, layer="sig", selected=null, hidden=false, wheel=false, night=false, voiceOn=false, layerOn=false;
 const poiOn={};
 const need=c=>Math.round(7+(c.lanes*3.25)/speed);
 const short=c=>c.sig==="Y"&&c.g>0&&c.g<need(c);
@@ -564,7 +576,7 @@ function updateFloats(){const home=document.getElementById('sh-home');const home
  const h=(!other&&homeOpen)?home.offsetHeight:0;fab.style.bottom=(h+14)+'px';loc.style.bottom=(h+14)+'px';leg.style.bottom=(h+70)+'px';}
 document.querySelectorAll('#layers .gi[data-l]').forEach(el=>el.onclick=()=>{document.querySelectorAll('#layers .gi').forEach(x=>x.classList.remove('on'));el.classList.add('on');layer=el.dataset.l;render();});
 
-const sheets=['sh-home','sh-bus','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card'];
+const sheets=['sh-home','sh-bus','sh-report','sh-route','sh-warn','sh-pref','sh-follow','sh-card','sh-walk'];
 function show(id){sheets.forEach(s=>document.getElementById(s).classList.toggle('hide',s!==id));document.querySelector('.top').style.display=(id==='sh-follow')?'none':'';updateFloats();}
 document.querySelectorAll('.rbtn[data-r]').forEach(b=>b.onclick=()=>{const k=b.dataset.r;const p=document.getElementById('pop-'+k);const open=p.classList.contains('hide');document.querySelectorAll('.pop').forEach(x=>x.classList.add('hide'));document.querySelectorAll('.rbtn[data-r]').forEach(x=>x.classList.remove('on'));if(open){p.classList.remove('hide');b.classList.add('on');}
   if(k==='layer'){layerOn=open;if(layerOn&&map.getZoom()<17)map.setZoom(17);render();if(layerOn)toast("건널목 보기 켜짐");}});
@@ -583,7 +595,11 @@ map.on('click',()=>{if(!routeMode)closeSearch();document.querySelectorAll('.pop'
 function updateSummary(){const sig=document.querySelector('#segSig .on');const parts=[WALKNM[speed]||'보통',sig?sig.textContent.trim():'신호등만'];if(night)parts.push('🌙');if(wheel)parts.push('♿');fSummary.textContent='⚙ '+parts.join(' · ')+' ▾';}
 function toggleNight(){night=document.getElementById('swNight').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
 function toggleWheel(){wheel=document.getElementById('swWheel').classList.contains('on');updateSummary();if(routeMode)drawRoute();}
-segSpeed.querySelectorAll('div').forEach(d=>d.onclick=()=>{segSpeed.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');speed=+d.dataset.v;updateSummary();render();if(routeMode)drawRoute();});
+function setSpeed(v){speed=v;try{localStorage.setItem('mj_speed',String(v))}catch(e){}
+ ['segSpeed','segSpeedR','segSpeedW'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.querySelectorAll('div').forEach(x=>x.classList.toggle('on',+x.dataset.v===v));});
+ updateSummary();render();if(routeMode)drawRoute();}
+['segSpeed','segSpeedR','segSpeedW'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.querySelectorAll('div').forEach(d=>d.onclick=()=>setSpeed(+d.dataset.v));});
+function walkDone(){show('sh-home');toast(WALKNM[speed]+' 걸음으로 계산할게요');if(!loadPlaces().length)setTimeout(openSearch,400);}
 document.getElementById("swVoice").addEventListener("click",()=>{voiceOn=document.getElementById("swVoice").classList.contains("on");toast(voiceOn?"음성 안내 켜짐":"음성 안내 꺼짐");});
 let myLocMk=null;
 document.getElementById("locBtn").onclick=()=>{if(!navigator.geolocation){toast('이 기기에선 위치를 쓸 수 없어요');return;}
@@ -636,7 +652,7 @@ function drawRoute(){
     else if(useAlt[s.id]){const mk=L.marker(mid,ico('<div class="mk warn done"><div class="bub">✅ 우회 적용</div><div class="tail"></div></div>',800)).addTo(map);mk.on('click',()=>openWarn(i));warnMarkers.push(mk);}
     steps.push({i,ev,m,s});});
   rEye.textContent='길 미리보기 · '+R.name;rWarnN.textContent=warn;
-  rSub.textContent='도보 '+Math.round(total/(speed*60))+'분 · '+total+'m · 건널목 '+cwN+'곳 · '+WALKNM[speed]+(night?' · 🌙 안심길':'')+(wheel?' · ♿':'');
+  rSub.textContent='내 걸음으로 '+Math.round(total/(speed*60))+'분 · '+total+'m · 건널목 '+cwN+'곳 · '+WALKNM[speed]+(night?' · 🌙 안심길':'')+(wheel?' · ♿':'');
   rStats.innerHTML='<div class="stat"><b>'+cwN+'</b><span>건널목</span></div><div class="stat '+(noS?'bad':'ok')+'"><b>'+noS+'</b><span>신호 없음</span></div><div class="stat '+(sh?'warn':'ok')+'"><b>'+sh+'</b><span>짧은 신호</span></div><div class="stat '+(bad?'bad':'ok')+'"><b>'+warn+'</b><span>조심할 곳</span></div>';
   let altM=0,altN=0;R.segs.forEach(s=>{if(s.alt&&!useAlt[s.id]){const e2=segEval(s);if(e2.level!=='ok'){altM+=s.alt.m-s.m;altN++;}}});
   const rT=document.getElementById('rTrade');
@@ -707,7 +723,9 @@ function renderPlaces(){const ps=loadPlaces();
  const st=document.querySelector('#sh-home .statrow');if(st)st.style.display=ps.length?'':'none';const sr=document.querySelector('#sh-home > .src');if(sr)sr.style.display=ps.length?'':'none';const sc=document.getElementById('savedChips');if(sc)sc.innerHTML=ps.map((p,i)=>'<span class="chip ok" onclick="goPlace('+i+');show(\'sh-home\')">'+p.label.split(' ')[0]+' '+p.name.slice(0,8)+'</span>').join('');}
 ['segSig','segLight'].forEach(id=>{const el=document.getElementById(id);el.querySelectorAll('div').forEach(d=>d.onclick=()=>{el.querySelectorAll('div').forEach(x=>x.classList.remove('on'));d.classList.add('on');updateSummary();});});
 updateSummary();renderPlaces();
-show('sh-home');if(!loadPlaces().length)setTimeout(openSearch,400);
+const _sv=parseFloat(localStorage.getItem('mj_speed'));
+if(_sv&&WALKNM[_sv]){setSpeed(_sv);show('sh-home');if(!loadPlaces().length)setTimeout(openSearch,400);}
+else{show('sh-walk');}
 </script>
 </body>
 </html>
