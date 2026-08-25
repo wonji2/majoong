@@ -737,6 +737,7 @@ window.addEventListener("load",function(){
   else if(q==="4a"){setSpeed(1.0);preview("home");}
   else if(q==="4b"){setSpeed(0.7);preview("home");}
   else if(q==="5"){setSpeed(0.8);preview("home");var R=ROUTES["home"];for(var i=0;i<R.segs.length;i++){var s=R.segs[i];var ev=segEval(s);if(s.alt&&ev.level!=="ok"){useAlt[s.id]=true;break;}}drawRoute();}
+  setTimeout(function(){document.getElementById("sugPanel").classList.add("hide");document.getElementById("qClear").style.display="none";},300);
  },800);
 });
 </script></body>
